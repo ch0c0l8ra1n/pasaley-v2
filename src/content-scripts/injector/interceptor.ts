@@ -1,7 +1,10 @@
 import API from "@/lib/api";
 
 const api = new API();
-api.setProd(true);
+
+// This needs to be set because the extension is injected via a script tag.
+// isExtension will return false.
+api.setProd(true); 
 
 var findItems = (data: any | any[],parent="ROOT") : any[] => {
     const items = [];
