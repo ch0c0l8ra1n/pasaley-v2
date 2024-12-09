@@ -1,0 +1,10 @@
+/* @layer utilities { */
+    #pasaley-root .highcharts-loading {
+      @apply flex justify-center items-center;
+    }
+  
+    #pasaley-root .highcharts-loading-inner {
+      @apply flex justify-center text-zinc-950;
+      top: 0 !important;
+    }
+/* } */
