@@ -1,7 +1,5 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react-swc'
-import { crx } from '@crxjs/vite-plugin'
-import manifest from './manifest.json'
 import { fileURLToPath } from 'url'
 import path from 'path'
 import cssInjectedByJsPlugin from 'vite-plugin-css-injected-by-js'
@@ -14,11 +12,24 @@ export default defineConfig({
   plugins: [
     react(),
     cssInjectedByJsPlugin({styleId: 'pasaley-css'}),
-    crx({ manifest }),
   ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src/')
     }
+  },
+  build: {
+    rollupOptions: {
+      input: {
+        chartApp: path.resolve(__dirname, 'src/content-scripts/chart/index.tsx'),
+      },
+      output: {
+        entryFileNames: 'assets/chartApp/[name].js',
+        chunkFileNames: 'assets/chartApp/[name].js',
+        assetFileNames: 'assets/chartApp/[name].[ext]',
+      }
+    },
+    // minify: false,
+    emptyOutDir: false,
   }
 })

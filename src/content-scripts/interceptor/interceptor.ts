@@ -76,6 +76,12 @@ window.XMLHttpRequest.prototype.open = function() {
         const responseBody = this.responseText;
 
         try{
+            const url = this.responseURL;
+            // test if url contains ajax=true in it
+            if (url.includes("ajax=true")){
+                console.log(url);
+            }
+
             const data = JSON.parse(responseBody);
 
             const items = findItems(data);

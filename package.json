@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build -c vite.interceptor.config.ts && tsc -b && vite build",
+    "build": "vite build -c vite.interceptor.config.ts && tsc -b && vite build -c vite.chartApp.config.ts",
     "lint": "eslint .",
     "preview": "vite preview"
   },

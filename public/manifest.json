@@ -1,0 +1,53 @@
+{
+    "manifest_version": 3,
+    "name": "Pasaley",
+    "version": "1.0.3",
+    "description": "Pasaley is a daraz price tracker.",
+    "content_scripts": [
+      {
+        "matches": [
+          "https://www.daraz.com.np/products/*",
+          "https://www.daraz.pk/products/*",
+          "https://www.daraz.com.bd/products/*",
+          "https://www.daraz.lk/products/*"
+        ],
+        "js": [
+          "assets/chartApp/chartApp.js"
+        ],
+        "run_at": "document_idle",
+        "all_frames": true
+      },
+      {
+        "matches": [
+          "https://www.daraz.com.np/*",
+          "https://www.daraz.pk/*",
+          "https://www.daraz.com.bd/*",
+          "https://www.daraz.lk/*"
+        ],
+        "js": [
+          "assets/interceptor/interceptor.js"
+        ],
+        "css": [],
+        "world": "MAIN",
+        "run_at": "document_start"
+      }
+    ],
+    "web_accessible_resources": [
+      {
+        "resources": [
+          "public/interceptor.js"
+        ],
+        "matches": [
+          "https://www.daraz.com.np/*",
+          "https://www.daraz.pk/*",
+          "https://www.daraz.com.bd/*",
+          "https://www.daraz.lk/*"
+        ]
+      }
+    ],
+    "browser_specific_settings": {
+      "gecko": {
+        "id": "pasaley@pm.me"
+      }
+    }
+  }

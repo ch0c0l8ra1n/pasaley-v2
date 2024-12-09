@@ -2,24 +2,25 @@ import { defineConfig } from 'vite';
 import path from 'path';
 
 export default defineConfig({
+    plugins: [],
     resolve: {
         alias: {
           "@": path.resolve(__dirname, "./src/"),
         },
       },
     build: {
-        outDir: 'public',
+        outDir: 'dist',
         rollupOptions: {
             input: {
-                interceptor: 'src/content-scripts/injector/interceptor.ts'
+                interceptor: 'src/content-scripts/interceptor/interceptor.ts'
             },
             output: {
-                entryFileNames: '[name].js',
-                chunkFileNames: '[name].js',
-                assetFileNames: '[name].[ext]'
+                entryFileNames: 'assets/interceptor/[name].js',
+                chunkFileNames: 'assets/interceptor/[name].js',
+                assetFileNames: 'assets/interceptor/[name].[ext]'
             }
         },
-        minify: false,
+        // minify: false,
         emptyOutDir: false,
     }
 });
