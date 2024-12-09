@@ -6,7 +6,7 @@ import { setShadoDomStyles, setupShadowDOM } from "./shadowdom";
 import { isExtension } from "@/lib/utils";
 import './index.css';
 
-if (isExtension) {
+if (isExtension()) {
 
   (async () => {
     const pasaleyCSS = document.getElementById('pasaley-css');

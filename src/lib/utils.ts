@@ -24,7 +24,24 @@ const getHostCountry = () => {
     return "";
 }
 
-const isExtension = chrome.runtime !== undefined;
+
+const isExtension = () => {
+    try{
+        return chrome.runtime !== undefined;
+    }
+    catch (err){
+        return true;
+    }
+}
+
+function isProd() {
+    try{
+        return isExtension() && ('update_url' in chrome.runtime.getManifest());
+    }
+    catch (err){
+        return true;
+    }
+  }
 
 const getPrice = () => {
     try {
@@ -49,9 +66,7 @@ const asleep = (delay: number) => {
     return new Promise(resolve => setTimeout(resolve, delay));
   }
 
-  function isProd() {
-    return isExtension && ('update_url' in chrome.runtime.getManifest());
-  }
+
 
 export {
     cn,

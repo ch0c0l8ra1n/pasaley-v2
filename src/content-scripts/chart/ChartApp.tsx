@@ -10,6 +10,12 @@ interface ChartAppProps {
     hostCountry: string;
 }
 
+// Save the original requestAnimationFrame
+const originalRAF = window.requestAnimationFrame;
+
+// Bind requestAnimationFrame to the correct window object
+window.requestAnimationFrame = originalRAF.bind(window);
+
 const ChartApp = ({productId,hostCountry}: ChartAppProps) => {
 
     const [data, setData] = useState<Array<Array<number>>>([]);
