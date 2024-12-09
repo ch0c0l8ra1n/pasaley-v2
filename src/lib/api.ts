@@ -1,24 +1,25 @@
 import { getHostCountry, isProd } from "@/lib/utils";
 
 class API{
-    static BASE_URL = isProd() ? 'https://shakenep.com/api/v2' : 'https://127.0.0.1/api/v2';
-    // static BASE_URL = 'https://www.shakenep.com/api/v2'
-    // static BASE_URL = 'https://127.0.0.1';
+    DEV_BASE_URL = 'https://127.0.0.1/api/v2';
+    PROD_BASE_URL = 'https://www.shakenep.com/api/v2';
 
-    static getBaseUrl(){
-        return API.BASE_URL;
+
+    BASE_URL = isProd() ? 'https://shakenep.com/api/v2' : 'https://127.0.0.1/api/v2';
+
+    getBaseUrl(){
+        return this.BASE_URL;
     }
 
-    /**
-     * 
-     * @param {string | Request | URL} input
-     * @param {RequestInit} initOptions
-     * @returns {Promise<any>}
-     * @throws {Error}
-     *
-     * @async
-    **/
-    static async fetchJSON(input: string| Request| URL, initOptions: RequestInit  = {}){
+    setBaseUrl(url: string){
+        this.BASE_URL = url;
+    }
+
+    setProd(enabled: boolean){
+        this.BASE_URL = enabled ? this.PROD_BASE_URL : this.DEV_BASE_URL;
+    }
+
+    async fetchJSON(input: string| Request| URL, initOptions: RequestInit  = {}){
         let resp;
 
         try{
@@ -38,28 +39,31 @@ class API{
         return await resp.json();
     }
 
-    static async getPriceHistory(id: string, hostCountry: string): Promise<{price:number,time:string}[]>{
-        const url = new URL(`${API.BASE_URL}/pricehistory`);
+    async getPriceHistory(id: string, hostCountry: string): Promise<{price:number,time:string}[]>{
+        const url = new URL(`${this.BASE_URL}/pricehistory`);
         const params: Record<string, string> = {
             id,
             hostCountry
         }
         Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
 
-        const resp = await API.fetchJSON(url);
+        const resp = await this.fetchJSON(url);
+
+        if (resp.prices) return resp.prices; // for backwards compatibility will change soon
+
         return resp?.data?.prices;
     }
 
-    static async sendListItems(items: any[]){
+    async sendListItems(items: any[]){
         console.log("Sending Items!");
         const hostCountry = getHostCountry();
         for (const item of items){
             item.hostCountry = hostCountry;
         }
 
-        const url = new URL(`${API.BASE_URL}/listitemsapi`);
+        const url = new URL(`${this.BASE_URL}/listitemsapi`);
         try{
-            await API.fetchJSON(url,{
+            await this.fetchJSON(url,{
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"

@@ -12,22 +12,22 @@ const isExtension = chrome.runtime !== void 0;
 function isProd() {
   return isExtension && "update_url" in chrome.runtime.getManifest();
 }
-const _API = class _API {
-  // static BASE_URL = 'https://www.shakenep.com/api/v2'
-  // static BASE_URL = 'https://127.0.0.1';
-  static getBaseUrl() {
-    return _API.BASE_URL;
+class API {
+  constructor() {
+    __publicField(this, "DEV_BASE_URL", "https://127.0.0.1/api/v2");
+    __publicField(this, "PROD_BASE_URL", "https://www.shakenep.com/api/v2");
+    __publicField(this, "BASE_URL", isProd() ? "https://shakenep.com/api/v2" : "https://127.0.0.1/api/v2");
   }
-  /**
-   * 
-   * @param {string | Request | URL} input
-   * @param {RequestInit} initOptions
-   * @returns {Promise<any>}
-   * @throws {Error}
-   *
-   * @async
-  **/
-  static async fetchJSON(input, initOptions = {}) {
+  getBaseUrl() {
+    return this.BASE_URL;
+  }
+  setBaseUrl(url) {
+    this.BASE_URL = url;
+  }
+  setProd(enabled) {
+    this.BASE_URL = enabled ? this.PROD_BASE_URL : this.DEV_BASE_URL;
+  }
+  async fetchJSON(input, initOptions = {}) {
     let resp;
     try {
       resp = await fetch(input, {
@@ -42,26 +42,27 @@ const _API = class _API {
     }
     return await resp.json();
   }
-  static async getPriceHistory(id, hostCountry) {
+  async getPriceHistory(id, hostCountry) {
     var _a;
-    const url = new URL(`${_API.BASE_URL}/pricehistory`);
+    const url = new URL(`${this.BASE_URL}/pricehistory`);
     const params = {
       id,
       hostCountry
     };
     Object.keys(params).forEach((key) => url.searchParams.append(key, params[key]));
-    const resp = await _API.fetchJSON(url);
+    const resp = await this.fetchJSON(url);
+    if (resp.prices) return resp.prices;
     return (_a = resp == null ? void 0 : resp.data) == null ? void 0 : _a.prices;
   }
-  static async sendListItems(items) {
+  async sendListItems(items) {
     console.log("Sending Items!");
     const hostCountry = getHostCountry();
     for (const item of items) {
       item.hostCountry = hostCountry;
     }
-    const url = new URL(`${_API.BASE_URL}/listitemsapi`);
+    const url = new URL(`${this.BASE_URL}/listitemsapi`);
     try {
-      await _API.fetchJSON(url, {
+      await this.fetchJSON(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -76,9 +77,9 @@ const _API = class _API {
       console.error(err);
     }
   }
-};
-__publicField(_API, "BASE_URL", isProd() ? "https://shakenep.com/api/v2" : "https://127.0.0.1/api/v2");
-let API = _API;
+}
+const api = new API();
+api.setProd(true);
 var findItems = (data, parent = "ROOT") => {
   const items = [];
   for (const key of Object.getOwnPropertyNames(data)) {
@@ -129,7 +130,7 @@ window.XMLHttpRequest.prototype.open = function() {
       const items = findItems(data);
       const processedItems = processItems(items);
       if (items.length > 0)
-        await API.sendListItems(processedItems);
+        await api.sendListItems(processedItems);
     } catch (err) {
     }
   });
@@ -158,7 +159,7 @@ callWhenBodyIsReady(async () => {
   if (items.length > 0) {
     try {
       const processedItems = processItems(items);
-      await API.sendListItems(processedItems);
+      await api.sendListItems(processedItems);
     } catch (err) {
       console.error(err);
     }

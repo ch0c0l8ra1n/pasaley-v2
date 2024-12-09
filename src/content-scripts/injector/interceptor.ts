@@ -1,7 +1,7 @@
-// BASE_URL = "https://127.0.0.1/api/v2";
-// const BASE_URL = "https://www.shakenep.com/api/v2";
-
 import API from "@/lib/api";
+
+const api = new API();
+api.setProd(true);
 
 var findItems = (data: any | any[],parent="ROOT") : any[] => {
     const items = [];
@@ -80,7 +80,7 @@ window.XMLHttpRequest.prototype.open = function() {
             const processedItems = processItems(items);
 
             if (items.length > 0)
-                await API.sendListItems(processedItems);
+                await api.sendListItems(processedItems);
 
         }
         catch (err){
@@ -122,7 +122,7 @@ callWhenBodyIsReady(async () => {
     if (items.length > 0){
         try{
             const processedItems = processItems(items);
-            await API.sendListItems(processedItems);
+            await api.sendListItems(processedItems);
         }
         catch (err){
             console.error(err);

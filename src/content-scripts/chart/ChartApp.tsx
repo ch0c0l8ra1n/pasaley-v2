@@ -2,6 +2,8 @@ import PriceChart from '@/components/chart/price-chart';
 import { useEffect, useState } from 'react';
 import ChartAppLayout from '@/components/chart-app-layout';
 import API from '@/lib/api';
+const api = new API();
+api.setProd(true);
 
 interface ChartAppProps {
     productId: string;
@@ -14,7 +16,7 @@ const ChartApp = ({productId,hostCountry}: ChartAppProps) => {
     const [loading, setLoading] = useState<boolean>(true);
 
     useEffect(() => { (async () => {
-        const prices = await API.getPriceHistory(productId, hostCountry);
+        const prices = await api.getPriceHistory(productId, hostCountry);
         // .map((price: { time: string; price: number; }) => [new Date(price.time).getTime(), price.price])
         // .sort((a: number[], b: number[]) => a[0] - b[0]);
 
