@@ -12,12 +12,12 @@ const Socials: Social[] = [
     },
     {
         name: "Discord",
-        url: "https://discord.com/",
+        url: "https://discord.gg/nYV9YmMkrP",
     }
     ,
     {
         name: "Github",
-        url: "https://github.com"
+        url: "https://github.com/ch0c0l8ra1n/pasaley-v2"
     }
 ]
 
