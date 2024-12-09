@@ -113,7 +113,9 @@
   .phone_wrapper main .tab_panel1,
   .phone_wrapper main .tab_panel2 {
     width: 50%;
-    padding: 10px;
+    padding-top: 10px;
+    padding-left: 10px;
+    padding-right: 10px;
   }
   
   .phone_wrapper main .card {

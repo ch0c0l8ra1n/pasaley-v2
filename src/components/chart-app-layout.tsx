@@ -2,7 +2,10 @@ import { useState } from "react";
 import {cn} from "@/lib/utils";
 import logo from "../../public/logo.png"
 
+import Socials from "@/lib/socials";
+
 import "./chart-app-layout.css";
+import { SocialIcon } from "react-social-icons";
 
 type Tab = {
     title: string;
@@ -52,6 +55,14 @@ const ChartAppLayout = ({ layout }: ChartAppLayoutProps) => {
                     </div>
                 </div>
             </main>
+            
+            <div className="w-full flex justify-center items-center pb-2">
+                {Socials.map((social, index) => (
+                    // <a key={index} href={social.url} target="_blank" rel="noreferrer">
+                        <SocialIcon target="_blank" key={index} url={social.url}  style={{ height: 30, width: 30 }} className="mx-2"/>
+                    // </a>
+                ))}
+            </div>
         </div>
     )
 }
