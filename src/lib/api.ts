@@ -2,10 +2,10 @@ import { getHostCountry, isProd } from "@/lib/utils";
 
 class API{
     DEV_BASE_URL = 'https://127.0.0.1/api/v2';
-    PROD_BASE_URL = 'https://www.shakenep.com/api/v2';
+    PROD_BASE_URL = 'https://www.pasaley.com/api/v2';
 
 
-    BASE_URL = isProd() ? 'https://shakenep.com/api/v2' : 'https://127.0.0.1/api/v2';
+    BASE_URL = isProd() ? this.PROD_BASE_URL : this.DEV_BASE_URL;
 
     getBaseUrl(){
         return this.BASE_URL;
