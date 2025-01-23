@@ -7,8 +7,6 @@ const api = new API();
 // isExtension will return false.
 api.setProd(true); 
 
-api.setProd(false);
-
 document.addEventListener("click", (event: MouseEvent) => {
     // console.log("Pasaley click tracking.");
     const productId = getProductId();
