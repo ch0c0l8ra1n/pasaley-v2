@@ -79,6 +79,24 @@ class API{
         }
     }
 
+    async ingestClick(data: any){
+        const url = new URL(`${this.BASE_URL}/ingestclick`);
+        try{
+            await this.fetchJSON(url,{
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    ...data
+                }),
+                credentials: "include"
+            });
+        } catch(err){
+            console.error(err);
+        }
+    }
+
 }
 
 export default API;

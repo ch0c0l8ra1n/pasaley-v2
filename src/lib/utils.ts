@@ -25,6 +25,17 @@ const getHostCountry = () => {
 }
 
 
+const getItemQuantity:() => Number = () => {
+    const quantityInput = document.getElementById('module_quantity-input');
+    if (quantityInput) {
+        const inputElem = quantityInput.querySelector('input');
+        if (inputElem) {
+            return parseInt(inputElem.value);
+        }
+    }
+    return NaN;
+}
+
 const isExtension = () => {
     try{
         return chrome.runtime !== undefined;
@@ -75,5 +86,6 @@ export {
     getPrice,
     isExtension,
     isProd,
+    getItemQuantity,
     asleep
 }

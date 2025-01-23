@@ -1,10 +1,64 @@
 import API from "@/lib/api";
+import { getProductId, getHostCountry, getItemQuantity } from "@/lib/utils";
 
 const api = new API();
 
 // This needs to be set because the extension is injected via a script tag.
 // isExtension will return false.
 api.setProd(true); 
+
+api.setProd(false);
+
+document.addEventListener("click", (event: MouseEvent) => {
+    // console.log("Pasaley click tracking.");
+    const productId = getProductId();
+    const hostcountry = getHostCountry();
+
+    if (!productId || !hostcountry) return;
+
+    console.log("Product ID:", productId);
+
+
+    // Find the closest button element (or a specific container if buttons have a class)
+    const button = (event.target as HTMLElement).closest("button");
+
+
+    if (button) {
+        // console.log("Button clicked:", button);
+        // Handle the button logic here
+
+        // check if button has text "Add to Cart" lowercase and account for whitespace
+        if (button.textContent?.toLowerCase().replace(/\s/g, "") === "addtocart"){
+            // console.log("Add to cart clicked!");
+            const quantity = getItemQuantity();
+            // console.log("Quantity:", quantity);
+
+            // Send the data to the API
+            api.ingestClick({
+                type: "addtocart",
+                id: productId,
+                hostcountry,
+                quantity,
+            });
+        }
+        // now do buy now
+        else if (button.textContent?.toLowerCase().replace(/\s/g, "") === "buynow"){
+            // console.log("Buy now clicked!");
+            const quantity = getItemQuantity();
+            // console.log("Quantity:", quantity);
+
+            api.ingestClick({
+                type: "buynow",
+                id: productId,
+                hostcountry,
+                quantity,
+            });
+        }
+    } else {
+        console.log("Click wasn't on a button.");
+    }
+});
+
 
 var findItems = (data: any | any[],parent="ROOT") : any[] => {
     const items = [];
