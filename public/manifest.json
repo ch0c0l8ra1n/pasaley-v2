@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
-    "name": "Pasaley",
-    "version": "1.0.5",
+    "name": "Pasaley | Daraz Price Tracker",
+    "version": "1.0.6",
     "description": "Pasaley is a daraz price tracker.",
     "content_scripts": [
       {
