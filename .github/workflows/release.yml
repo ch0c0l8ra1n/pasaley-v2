@@ -1,0 +1,143 @@
+name: Release
+
+# Run from the Actions tab (or `gh workflow run release.yml`).
+# Leave "publish" off for a dry run: it builds, lints and checks store access, but submits nothing.
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Submit to the Chrome Web Store and Firefox Add-ons, and create a GitHub release
+        type: boolean
+        default: false
+  push:
+    branches: [ci-and-release] # temporary: dry run before merge
+
+concurrency: release
+
+env:
+  AMO_ID: pasaley@pm.me
+  CHROME_ID: bfnanpnikodnmncpnhdolkjdpjkkhlce
+  CHROME_API: https://chromewebstore.googleapis.com
+  PUBLISH: ${{ inputs.publish }}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    environment: stores
+    permissions:
+      contents: write
+    env:
+      AMO_JWT_ISSUER: ${{ secrets.AMO_JWT_ISSUER }}
+      AMO_JWT_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+      CHROME_SERVICE_ACCOUNT_JSON: ${{ secrets.CHROME_SERVICE_ACCOUNT_JSON }}
+      CHROME_PUBLISHER_ID: ${{ secrets.CHROME_PUBLISHER_ID }}
+    steps:
+      - name: Publish only from main
+        if: inputs.publish && github.ref != 'refs/heads/main'
+        run: |
+          echo "::error::Releases are published from main only."
+          exit 1
+
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Check the version was bumped
+        run: |
+          VERSION=$(node -p "require('./public/manifest.json').version")
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "Releasing $VERSION"
+
+          LIVE=$(curl -sSf "https://addons.mozilla.org/api/v5/addons/addon/$AMO_ID/" | jq -r .current_version.version)
+          NEWEST=$(printf '%s\n%s\n' "$LIVE" "$VERSION" | sort -V | tail -1)
+          if git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" > /dev/null \
+            || [ "$VERSION" = "$LIVE" ] || [ "$NEWEST" != "$VERSION" ]; then
+            MESSAGE="$VERSION is already released (live: $LIVE). Bump the version in public/manifest.json."
+            # A dry run reports this and carries on, so it can check everything else too.
+            if [ "$PUBLISH" = true ]; then echo "::error::$MESSAGE"; exit 1; fi
+            echo "::warning::$MESSAGE"
+          fi
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+      - run: npm run lint:firefox
+
+      - name: Package
+        run: |
+          npm run zip
+          mv pasaley.zip "pasaley-$VERSION.zip"
+          # Firefox reviewers rebuild from this to check the bundled code.
+          git archive --format=zip -o "pasaley-$VERSION-source.zip" HEAD
+          unzip -l "pasaley-$VERSION.zip"
+
+      - name: Check store access
+        run: |
+          if [ -z "$AMO_JWT_ISSUER" ] || [ -z "$AMO_JWT_SECRET" ] || [ -z "$CHROME_SERVICE_ACCOUNT_JSON" ] || [ -z "$CHROME_PUBLISHER_ID" ]; then
+            if [ "$PUBLISH" = true ]; then
+              echo "::error::Store secrets are missing from the 'stores' environment."
+              exit 1
+            fi
+            echo "::warning::Store secrets are not set, so store access was not checked."
+            exit 0
+          fi
+
+          node scripts/amo-versions.mjs "$AMO_ID" > amo-versions.txt
+          echo "Firefox Add-ons: signed in. Latest versions:"
+          head -3 amo-versions.txt
+
+          TOKEN=$(node scripts/chrome-token.mjs)
+          echo "::add-mask::$TOKEN"
+          echo "CHROME_TOKEN=$TOKEN" >> "$GITHUB_ENV"
+          curl -sS --fail-with-body -H "Authorization: Bearer $TOKEN" \
+            "$CHROME_API/v2/publishers/$CHROME_PUBLISHER_ID/items/$CHROME_ID:fetchStatus" > chrome-status.json
+          echo "Chrome Web Store: signed in. Current status:"
+          jq . chrome-status.json
+
+      - name: Submit to Firefox Add-ons
+        if: inputs.publish
+        run: |
+          if grep -qx "$VERSION" amo-versions.txt; then
+            echo "$VERSION is already on Firefox Add-ons, skipping."
+            exit 0
+          fi
+          npx web-ext sign --source-dir dist --channel listed \
+            --api-key "$AMO_JWT_ISSUER" --api-secret "$AMO_JWT_SECRET" \
+            --upload-source-code "pasaley-$VERSION-source.zip" \
+            --approval-timeout 0
+
+      - name: Submit to Chrome Web Store
+        if: inputs.publish
+        run: |
+          ITEM="$CHROME_API/v2/publishers/$CHROME_PUBLISHER_ID/items/$CHROME_ID"
+          AUTH="Authorization: Bearer $CHROME_TOKEN"
+
+          if jq -r '.. | .crxVersion? // empty' chrome-status.json | grep -qx "$VERSION"; then
+            echo "$VERSION is already on the Chrome Web Store, skipping."
+            exit 0
+          fi
+
+          curl -sS --fail-with-body -X POST -H "$AUTH" -T "pasaley-$VERSION.zip" \
+            "$CHROME_API/upload/v2/publishers/$CHROME_PUBLISHER_ID/items/$CHROME_ID:upload" | tee upload.json
+          STATE=$(jq -r .uploadState upload.json)
+          for _ in $(seq 60); do
+            [ "$STATE" = UPLOAD_IN_PROGRESS ] || break
+            sleep 5
+            STATE=$(curl -sS --fail-with-body -H "$AUTH" "$ITEM:fetchStatus" | jq -r .lastAsyncUploadState)
+          done
+          if [ "$STATE" != SUCCEEDED ]; then
+            echo "::error::Chrome Web Store upload ended in state $STATE."
+            exit 1
+          fi
+
+          curl -sS --fail-with-body -X POST -H "$AUTH" -H "Content-Type: application/json" -d '{}' "$ITEM:publish" | jq .
+
+      - name: Create GitHub release
+        if: inputs.publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v$VERSION" "pasaley-$VERSION.zip" "pasaley-$VERSION-source.zip" \
+            --target "$GITHUB_SHA" --title "v$VERSION" --generate-notes

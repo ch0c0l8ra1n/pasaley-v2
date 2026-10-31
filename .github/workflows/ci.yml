@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build # also type-checks
+      - run: npm run lint:firefox
+      - run: npm run zip
+
+      # Handy for trying a PR build, but not needed: skipped if artifact storage is full.
+      - uses: actions/upload-artifact@v4
+        continue-on-error: true
+        with:
+          name: pasaley-${{ github.sha }}
+          path: pasaley.zip
+          retention-days: 7
