@@ -33,6 +33,48 @@ The API address comes from `.env.production` and `.env.development`. The staging
 
 Other scripts: `npm run lint`, `npm run lint:firefox` (checks `dist/` with `web-ext lint`), `npm run zip` (zips `dist/` into `pasaley.zip`).
 
+## Testing in Chrome and Firefox
+
+These tests run on your computer, not in CI. They need Google Chrome and Firefox installed. They load the built extension (`dist/`) into each browser, open Daraz pages, and check that:
+
+- **Homepage:** the products embedded in the page (`window.__FIRST_SCREEN_DATA`) are sent to the API, and every product sent is one of them.
+- **Search page:** the products from Daraz's product list request (`catalog/?ajax=true`) are sent, for page 1 and again after going to page 2.
+- **Product page:** the price chart is added to the price section with its header, tabs and styles. It asks the API for this product's price history (right `id` and `hostCountry`) and draws it: the price axis and the line match the prices the API returned.
+- **Every page:** the page-world script is running.
+
+The tests answer calls to the Pasaley API themselves, so nothing reaches the real API.
+
+There are two ways to run them:
+
+**Replica (recorded Daraz pages).** Record today's pages once, then test against the recording as often as you like. Nothing goes to Daraz, so captchas and Daraz changes don't affect it.
+
+```bash
+npm run record
+```
+
+```bash
+npm run test:replica
+```
+
+Recordings are saved in `tests/recordings/` (not committed, about 150 MB) and are re-recorded whenever you run `npm run record`. If Daraz shows a captcha while recording, run `SHOW=1 npm run record` and solve it in the window.
+
+**Live Daraz.** Tests the real site, to catch Daraz changes that would break the extension.
+
+```bash
+npm run test:live
+```
+
+If Daraz shows a captcha, that page is skipped. If Daraz has changed something the extension relies on, the failure says `Daraz page changed: ...`.
+
+The pages are listed in `tests/pages.json`. Product pages are also taken from the search results.
+
+Options (environment variables):
+
+- `BROWSERS=chrome` or `BROWSERS=firefox` to test one browser.
+- `SHOW=1` to watch the browsers instead of running them headless.
+- `EXTENSION_DIR=dist-dev API_URL=https://127.0.0.1/api/v2` to test another build. Run `npm run build:dev` first. `API_URL` must match the build.
+- `CHROME_PATH` and `FIREFOX_PATH` if the browsers aren't in `/Applications`.
+
 ## Releasing
 
 Every pull request and push to `main` is linted and built by the CI workflow.
