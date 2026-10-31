@@ -10,6 +10,7 @@
     "build:dev": "vite build -c vite.interceptor.config.ts --mode development && tsc -b && vite build -c vite.chartApp.config.ts --mode development",
     "lint": "eslint .",
     "lint:firefox": "web-ext lint --source-dir dist",
+    "test:browsers": "npm run build && node --test tests/browsers.test.mjs",
     "zip": "rm -f pasaley.zip && cd dist && zip -qr ../pasaley.zip .",
     "preview": "vite preview"
   },
@@ -38,6 +39,7 @@
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.14",
     "globals": "^15.11.0",
+    "puppeteer-core": "^24.43.1",
     "tailwindcss": "^3.4.16",
     "typescript": "~5.6.2",
     "typescript-eslint": "^8.11.0",

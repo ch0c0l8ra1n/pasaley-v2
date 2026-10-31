@@ -33,6 +33,29 @@ The API address comes from `.env.production` and `.env.development`. The staging
 
 Other scripts: `npm run lint`, `npm run lint:firefox` (checks `dist/` with `web-ext lint`), `npm run zip` (zips `dist/` into `pasaley.zip`).
 
+## Testing in Chrome and Firefox
+
+These tests run on your computer, not in CI. They need Google Chrome and Firefox installed.
+
+```bash
+npm run test:browsers
+```
+
+This builds the extension, then opens the Daraz pages in `tests/pages.json` in both browsers with `dist/` loaded. For each country it checks that:
+
+- search pages send the listed items to the API;
+- product pages show the price chart in the price section, with its header, tabs and styles, after asking the API for that product's price history;
+- the page-world script is running.
+
+The test answers the API calls itself, so nothing reaches the real API. Product pages are taken from the search results, so they stay current. You can also list specific ones in `tests/pages.json`.
+
+Options (environment variables):
+
+- `BROWSERS=chrome` or `BROWSERS=firefox` to test one browser.
+- `SHOW=1` to watch the browsers instead of running them headless.
+- `EXTENSION_DIR=dist-dev API_URL=https://127.0.0.1/api/v2` to test another build. Run `npm run build:dev` first. `API_URL` must match the build.
+- `CHROME_PATH` and `FIREFOX_PATH` if the browsers aren't in `/Applications`.
+
 ## Releasing
 
 Every pull request and push to `main` is linted and built by the CI workflow.
