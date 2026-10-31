@@ -10,7 +10,9 @@
     "build:dev": "vite build -c vite.interceptor.config.ts --mode development && tsc -b && vite build -c vite.chartApp.config.ts --mode development",
     "lint": "eslint .",
     "lint:firefox": "web-ext lint --source-dir dist",
-    "test:browsers": "npm run build && node --test tests/browsers.test.mjs",
+    "record": "node tests/record.mjs",
+    "test:replica": "npm run build && node --test tests/replica.test.mjs",
+    "test:live": "npm run build && node --test tests/live.test.mjs",
     "zip": "rm -f pasaley.zip && cd dist && zip -qr ../pasaley.zip .",
     "preview": "vite preview"
   },

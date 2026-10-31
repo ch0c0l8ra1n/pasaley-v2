@@ -28,3 +28,4 @@ web-ext-artifacts/
 pasaley.zip
 pasaley-*.zip
 dist-*
+tests/recordings/
