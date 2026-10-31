@@ -20,5 +20,5 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["vite.chartApp.config.ts","vite.interceptor.config.ts","vite.variant.ts"],
+  "include": ["vite.chartApp.config.ts","vite.interceptor.config.ts","vite.variant.ts","vite.playground.config.ts"],
 }
