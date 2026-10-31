@@ -33,6 +33,19 @@ The API address comes from `.env.production` and `.env.development`. The staging
 
 Other scripts: `npm run lint`, `npm run lint:firefox` (checks `dist/` with `web-ext lint`), `npm run zip` (zips `dist/` into `pasaley.zip`).
 
+## Chart playground
+
+A local page for working on the price chart, with mock price history instead of the API:
+
+```bash
+npm run playground
+```
+
+- http://localhost:5174 shows the extension's chart on its own, with a choice of price histories (eight months, a new listing, a stable price, no history), widths and a slow API.
+- `npm run playground:save` saves a rendered Daraz product page into `playground/saved/` (not committed), with the chart added to its price section as the extension does. Open it from the playground's front page. With no URL it saves the first product in `tests/pages.json`, from the recording if `npm run record` has made one; `npm run playground:save -- <product url>` saves any other.
+
+Both render the real chart component (`src/content-scripts/chart/ChartApp.tsx`) in a shadow root, as the extension does. Edits to the chart or its CSS show up straight away.
+
 ## Testing in Chrome and Firefox
 
 These tests run on your computer, not in CI. They need Google Chrome and Firefox installed. They load the built extension (`dist/`) into each browser, open Daraz pages, and check that:

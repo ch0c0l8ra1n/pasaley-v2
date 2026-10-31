@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pasaley chart playground</title>
+    <link rel="stylesheet" href="/playground.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Price chart playground</h1>
+      <p>The extension's chart with mock price history for Thermocot Men's Cotton Thermal Set (Rs. 545).</p>
+    </header>
+    <form id="controls">
+      <fieldset id="scenario"><legend>Price history</legend></fieldset>
+      <fieldset id="width">
+        <legend>Width</legend>
+        <label><input type="radio" name="width" value="420" checked /> 420px</label>
+        <label><input type="radio" name="width" value="560" /> 560px</label>
+        <label><input type="radio" name="width" value="320" /> 320px</label>
+      </fieldset>
+      <fieldset>
+        <legend>Loading</legend>
+        <label><input type="checkbox" name="slow" /> Slow API (4s)</label>
+      </fieldset>
+    </form>
+    <main>
+      <!-- The extension adds the chart to Daraz's price section, which has this id. -->
+      <div id="module_product_price_1"></div>
+    </main>
+    <nav id="saved"><h2>Saved Daraz pages</h2></nav>
+    <script type="module" src="/standalone.tsx"></script>
+  </body>
+</html>
