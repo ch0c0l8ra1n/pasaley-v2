@@ -137,7 +137,7 @@ window.XMLHttpRequest.prototype.open = function() {
             const processedItems = processItems(items);
 
             if (items.length > 0)
-                await api.sendListItems(processedItems);
+                await api.sendListItems(processedItems, url);
 
         }
         catch (err){
@@ -179,7 +179,9 @@ callWhenBodyIsReady(async () => {
     if (items.length > 0){
         try{
             const processedItems = processItems(items);
-            await api.sendListItems(processedItems);
+            // This data is embedded in the page itself, so the page is the response
+            // (without its #fragment, which a response URL never has).
+            await api.sendListItems(processedItems, window.location.href.split('#')[0]);
         }
         catch (err){
             console.error(err);
