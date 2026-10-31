@@ -19,6 +19,18 @@ The extension is built into `dist/`. The same build works in both Chrome and Fir
 - Chrome: open `chrome://extensions`, turn on Developer mode, click "Load unpacked" and pick `dist/`.
 - Firefox: open `about:debugging#/runtime/this-firefox`, click "Load Temporary Add-on" and pick `dist/manifest.json`.
 
+### Builds
+
+| Command | Output | API | Name in the browser |
+|---|---|---|---|
+| `npm run build` | `dist/` | `https://www.pasaley.com/api/v2` | Pasaley \| Daraz Price Tracker |
+| `npm run build:dev` | `dist-dev/` | `https://127.0.0.1/api/v2` | Pasaley (Dev) |
+| `npm run build:staging` | `dist-staging/` | `VITE_API_URL` (see below) | Pasaley (Staging) |
+
+Only `npm run build` is released to the stores. The dev and staging builds have their own name and Firefox ID, so you can install them next to the released extension.
+
+The API address comes from `.env.production` and `.env.development`. The staging build has no default: put `VITE_API_URL=...` in `.env.staging.local` (not committed) or set it in the environment. `npm run dev` uses the dev API too.
+
 Other scripts: `npm run lint`, `npm run lint:firefox` (checks `dist/` with `web-ext lint`), `npm run zip` (zips `dist/` into `pasaley.zip`).
 
 ## Releasing

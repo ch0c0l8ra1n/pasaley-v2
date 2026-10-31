@@ -27,3 +27,4 @@ public/interceptor.js
 web-ext-artifacts/
 pasaley.zip
 pasaley-*.zip
+dist-*

@@ -45,15 +45,6 @@ const isExtension = () => {
     }
 }
 
-function isProd() {
-    try{
-        return isExtension() && ('update_url' in chrome.runtime.getManifest());
-    }
-    catch (err){
-        return true;
-    }
-  }
-
 const getPrice = () => {
     try {
         const priceElem = document.getElementsByClassName("pdp-price")[0];
@@ -85,7 +76,6 @@ export {
     getHostCountry,
     getPrice,
     isExtension,
-    isProd,
     getItemQuantity,
     asleep
 }
