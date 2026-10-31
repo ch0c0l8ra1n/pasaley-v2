@@ -9,8 +9,6 @@ on:
         description: Submit to the Chrome Web Store and Firefox Add-ons, and create a GitHub release
         type: boolean
         default: false
-  push:
-    branches: [ci-and-release] # temporary: dry run before merge
 
 concurrency: release
 
@@ -18,7 +16,6 @@ env:
   AMO_ID: pasaley@pm.me
   CHROME_ID: bfnanpnikodnmncpnhdolkjdpjkkhlce
   CHROME_API: https://chromewebstore.googleapis.com
-  PUBLISH: ${{ inputs.publish }}
 
 jobs:
   release:
@@ -27,6 +24,7 @@ jobs:
     permissions:
       contents: write
     env:
+      PUBLISH: ${{ inputs.publish }}
       AMO_JWT_ISSUER: ${{ secrets.AMO_JWT_ISSUER }}
       AMO_JWT_SECRET: ${{ secrets.AMO_JWT_SECRET }}
       CHROME_SERVICE_ACCOUNT_JSON: ${{ secrets.CHROME_SERVICE_ACCOUNT_JSON }}
