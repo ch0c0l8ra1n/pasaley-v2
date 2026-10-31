@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import ChartAppLayout from '@/components/chart-app-layout';
 import API from '@/lib/api';
 const api = new API();
-api.setProd(true);
 
 interface ChartAppProps {
     productId: string;

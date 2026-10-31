@@ -3,10 +3,6 @@ import { getProductId, getHostCountry, getItemQuantity } from "@/lib/utils";
 
 const api = new API();
 
-// This needs to be set because the extension is injected via a script tag.
-// isExtension will return false.
-api.setProd(true); 
-
 document.addEventListener("click", (event: MouseEvent) => {
     // console.log("Pasaley click tracking.");
     const productId = getProductId();

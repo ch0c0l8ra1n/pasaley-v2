@@ -3,15 +3,17 @@ import react from '@vitejs/plugin-react-swc'
 import { fileURLToPath } from 'url'
 import path from 'path'
 import cssInjectedByJsPlugin from 'vite-plugin-css-injected-by-js'
+import { manifest, outDir } from './vite.variant'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     cssInjectedByJsPlugin({styleId: 'pasaley-css'}),
+    manifest(mode),
   ],
   resolve: {
     alias: {
@@ -19,6 +21,7 @@ export default defineConfig({
     }
   },
   build: {
+    outDir: outDir(mode),
     rollupOptions: {
       input: {
         chartApp: path.resolve(__dirname, 'src/content-scripts/chart/index.tsx'),
@@ -32,4 +35,4 @@ export default defineConfig({
     // minify: false,
     emptyOutDir: false,
   }
-})
+}))

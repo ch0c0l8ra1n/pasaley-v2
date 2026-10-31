@@ -1,15 +1,16 @@
 import { defineConfig } from 'vite';
 import path from 'path';
+import { manifest, outDir } from './vite.variant';
 
-export default defineConfig({
-    plugins: [],
+export default defineConfig(({ mode }) => ({
+    plugins: [manifest(mode)],
     resolve: {
         alias: {
           "@": path.resolve(__dirname, "./src/"),
         },
       },
     build: {
-        outDir: 'dist',
+        outDir: outDir(mode),
         rollupOptions: {
             input: {
                 interceptor: 'src/content-scripts/interceptor/interceptor.ts'
@@ -23,4 +24,4 @@ export default defineConfig({
         // minify: false,
         emptyOutDir: false,
     }
-});
+}));

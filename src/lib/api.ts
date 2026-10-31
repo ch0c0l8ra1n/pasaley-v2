@@ -1,11 +1,8 @@
-import { getHostCountry, isProd } from "@/lib/utils";
+import { getHostCountry } from "@/lib/utils";
 
 class API{
-    DEV_BASE_URL = 'https://127.0.0.1/api/v2';
-    PROD_BASE_URL = 'https://www.pasaley.com/api/v2';
-
-
-    BASE_URL = isProd() ? this.PROD_BASE_URL : this.DEV_BASE_URL;
+    // Set at build time from the .env file for the build (see README).
+    BASE_URL = import.meta.env.VITE_API_URL;
 
     getBaseUrl(){
         return this.BASE_URL;
@@ -13,10 +10,6 @@ class API{
 
     setBaseUrl(url: string){
         this.BASE_URL = url;
-    }
-
-    setProd(enabled: boolean){
-        this.BASE_URL = enabled ? this.PROD_BASE_URL : this.DEV_BASE_URL;
     }
 
     async fetchJSON(input: string| Request| URL, initOptions: RequestInit  = {}){
