@@ -8,6 +8,8 @@
     "playground": "vite -c vite.playground.config.ts",
     "playground:save": "node playground/save-daraz-page.mjs",
     "build": "vite build -c vite.interceptor.config.ts && tsc -b && vite build -c vite.chartApp.config.ts",
+    "postbuild": "node scripts/local-extension.mjs",
+    "build:local": "node scripts/local-extension.mjs",
     "build:staging": "vite build -c vite.interceptor.config.ts --mode staging && tsc -b && vite build -c vite.chartApp.config.ts --mode staging",
     "build:dev": "vite build -c vite.interceptor.config.ts --mode development && tsc -b && vite build -c vite.chartApp.config.ts --mode development",
     "lint": "eslint .",

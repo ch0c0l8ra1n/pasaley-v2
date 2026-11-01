@@ -56,6 +56,14 @@ Only `npm run build` is released to the stores. The dev and staging builds have 
 
 The API address comes from `.env.production` and `.env.development`. The staging build has no default: put `VITE_API_URL=...` in `.env.staging.local` (not committed) or set it in the environment. `npm run dev` uses the dev API too.
 
+### Your own Chrome
+
+On your own computer, `npm run build` also builds "Pasaley (Local)" into `~/pasaley-local-extension`, using the production API. Its requests carry a version ending in `-local`. CI skips this, and nothing from it goes into `dist/` or the stores. `npm run build:local` builds only this.
+
+Chrome can't be told to install an unpacked extension, so the first build opens `chrome://extensions`: turn on Developer mode, click "Load unpacked" and pick that folder. Turn off the store version in that browser, or every page gets reported twice.
+
+After that, Chrome checks for a new build every few seconds, reloads the extension and refreshes open Daraz tabs. The last build wins, whichever branch or worktree it came from.
+
 Other scripts: `npm run lint`, `npm run lint:firefox` (checks `dist/` with `web-ext lint`), `npm run zip` (zips `dist/` into `pasaley.zip`).
 
 ## Chart playground
