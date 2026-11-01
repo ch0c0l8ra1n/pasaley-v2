@@ -128,7 +128,7 @@ async function answerApi(page, request, apiCalls) {
   apiCalls.push(call)
 
   let data = { message: 'SUCCESS' }
-  if (url.pathname.endsWith('/pricehistory')) data = { prices: PRICES }
+  if (url.pathname.endsWith('/pricehistory')) data = { prices: PRICES, skus: [] }
   if (url.pathname.endsWith('/config')) data = { minimumVersion: null, serverTime: new Date().toISOString() }
   if (url.pathname.endsWith('/keys')) {
     const der = Buffer.from(call.body.publicKey, 'base64url')
@@ -266,6 +266,16 @@ export async function checkProductPage({ page, apiCalls }, url) {
   for (const selector of ['#module_product_price_1', '.pdp-price', '.breadcrumb_item']) {
     assert.ok(await waitFor(() => page.$(selector)), `Daraz page changed: ${selector} is missing on the product page`)
   }
+
+  // The page's own data, with every variant, is reported once, signed.
+  const report = await waitFor(() => apiCalls.find((c) => c.url.pathname.endsWith('/ingest/product-page')))
+  assert.ok(report, `no product page sent to ${API}/ingest/product-page`)
+  assert.ok(report.signed, 'product page was sent without a valid signature')
+  assert.equal(report.body.itemId, url.match(/-i(\d+)/)[1], 'product page sent for the wrong item')
+  assert.equal(report.body.href, page.url().split(/[?#]/)[0])
+  assert.ok(report.body.skus.length > 0 && report.body.skus.every((sku) => /^\d+$/.test(sku.skuId)), 'product page sent without its variants')
+  const skus = JSON.parse(await page.evaluate(() => document.documentElement.getAttribute('data-pasaley-skus')) ?? 'null')
+  assert.ok(skus?.skus.length === report.body.skus.length, 'the chart was not told about the variants')
 
   const call = await waitFor(() => apiCalls.find((c) => c.url.pathname.endsWith('/pricehistory')))
   assert.ok(call, `no request to ${API}/pricehistory`)

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import ReactDOMServer from "react-dom/server";
 import Highcharts from "highcharts/highstock";
 import HighchartsReact from "highcharts-react-official";
@@ -12,19 +12,17 @@ Highcharts.AST.allowedAttributes.push('viewBox');
 const SpinnerHTML = ReactDOMServer.renderToStaticMarkup(<Spinner/>)
 
 
+export type PriceSeries = { name: string; data: Array<[number, number]> };
+
 type PriceChartProps = {
-    data: Array<Array<number>>;
+    series: PriceSeries[];
     loading: boolean;
 }
 
-const PriceChart = ({data, loading} : PriceChartProps) => {
+const PriceChart = ({series, loading} : PriceChartProps) => {
     const internalChart = useRef<Highcharts.Chart | null>(null);
     
-    const [options, setOptions] = useState(makeOptions(data));
-
-    useEffect(() => {
-        setOptions(makeOptions(data));
-    }, [data])
+    const options = makeOptions(series);
 
     useEffect(() => {
         if (!internalChart.current) return;

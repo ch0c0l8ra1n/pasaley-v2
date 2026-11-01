@@ -12,7 +12,8 @@ Price history is crowd-sourced: there is no crawler. Each installed extension re
 
 - **On every Daraz page**, a page script (`src/content-scripts/interceptor/interceptor.ts`) reads the product lists that Daraz's own page data and requests contain (product id, name, image, price, rating, reviews, sold count, seller). It hands them, with the page's URL and the URL of the request they came from, to a content script (`src/content-scripts/signer/signer.ts`) that sends them to the Pasaley API. It also reports clicks on "Add to cart" and "Buy now" on product pages.
 - **Requests are signed.** On first use the extension makes a key pair for this install (ECDSA P-256), registers the public key with the API, and signs every report with the private key. The key is kept in the extension's own storage (the `storage` permission), where scripts on Daraz pages can't reach it.
-- **On product pages**, a content script (`src/content-scripts/chart/`) adds a price-history chart to the price section, using the prices the API has recorded for that product.
+- **On product pages**, the page script also reads the page's own data (`src/lib/product-page.ts`): every variant (SKU) with its price, and the product's title, brand, seller, rating and categories. It sends that once per page view, signed the same way.
+- **On product pages**, a content script (`src/content-scripts/chart/`) adds a price-history chart to the price section, using the prices the API has recorded for that product. It shows the selected variant's prices and follows you when you pick another one, with a switch to show every variant.
 
 The API is `https://www.pasaley.com/api/v3` (`src/lib/api.ts`).
 

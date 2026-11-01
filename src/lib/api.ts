@@ -4,8 +4,13 @@ import { version } from "../../public/manifest.json";
 // What the page script hands to the signer content script (src/content-scripts/signer).
 export interface SignedPost {
     type: "pasaley:post";
-    path: "/ingest/products" | "/ingest/clicks";
+    path: "/ingest/products" | "/ingest/clicks" | "/ingest/product-page";
     body: object;
+}
+
+export interface PriceHistory {
+    prices: { price: number; time: string; skuId?: string | null }[];
+    skus: { skuId: string; name: string | null }[];
 }
 
 class API{
@@ -44,13 +49,14 @@ class API{
         return await resp.json();
     }
 
-    async getPriceHistory(id: string, hostCountry: string): Promise<{price:number,time:string}[]>{
+    // Each price says which variant (SKU) it was for, where that's known.
+    async getPriceHistory(id: string, hostCountry: string): Promise<PriceHistory>{
         const url = new URL(`${this.BASE_URL}/pricehistory`);
         url.searchParams.append('id', id);
         url.searchParams.append('hostCountry', hostCountry);
 
         const resp = await this.fetchJSON(url);
-        return resp?.data?.prices;
+        return { prices: resp?.data?.prices ?? [], skus: resp?.data?.skus ?? [] };
     }
 
     // Ingest requests are signed with this install's key, which the page
