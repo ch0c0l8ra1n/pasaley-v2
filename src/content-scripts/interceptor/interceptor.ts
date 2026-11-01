@@ -197,7 +197,10 @@ const PRODUCT_PAGE = /-i\d+(-s\d+)?\.html$/;
 callWhenBodyIsReady(async () => {
     if (!PRODUCT_PAGE.test(window.location.pathname)) return;
     const win = window as typeof window & { __moduleData__?: any };
-    for (let i = 0; i < 40 && !win.__moduleData__?.data?.root?.fields; i++) await asleep(250);
+    // The page arrives without variant prices and fills them in shortly after.
+    const priced = () => Object.values(win.__moduleData__?.data?.root?.fields?.skuInfos ?? {})
+        .some((info: any) => typeof info?.price?.salePrice?.value === "number");
+    for (let i = 0; i < 80 && !priced(); i++) await asleep(250);
     const fields = win.__moduleData__?.data?.root?.fields;
     if (!fields) return;
 
