@@ -47,7 +47,8 @@ class API{
         return resp?.data?.prices;
     }
 
-    async sendListItems(items: any[]){
+    // responseURL: the URL of the response the items were found in.
+    async sendListItems(items: any[], responseURL: string){
         console.log("Sending Items!");
         const hostCountry = getHostCountry();
         for (const item of items){
@@ -63,7 +64,8 @@ class API{
                 },
                 body: JSON.stringify({
                     listItems: items,
-                    href: window.location.href
+                    href: window.location.href,
+                    responseURL
                 }),
                 credentials: "include"
             });

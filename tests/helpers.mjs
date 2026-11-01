@@ -183,13 +183,14 @@ const interceptorRunning = (page) =>
 const listCalls = (apiCalls) => apiCalls.filter((c) => c.url.pathname.endsWith('/listitemsapi'))
 
 // Waits for a list of products to be sent to the API whose products all come from `source`.
-async function expectItemsSent(page, apiCalls, source, where) {
+// responseURL: the URL of the response the products came from, which the extension sends along.
+async function expectItemsSent(page, apiCalls, source, where, responseURL) {
   const call = await waitFor(() => listCalls(apiCalls).find((c) => {
     const sent = (c.body?.listItems ?? []).map((item) => String(item.itemId))
-    return sent.length > 0 && sent.every((id) => source.has(id))
+    return sent.length > 0 && sent.every((id) => source.has(id)) && c.body.responseURL === responseURL
   }))
-  const seen = listCalls(apiCalls).map((c) => c.body?.listItems?.length ?? 0)
-  assert.ok(call, `no products from ${where} were sent to ${API}/listitemsapi (sent lists of sizes: [${seen}])`)
+  const seen = listCalls(apiCalls).map((c) => `${c.body?.listItems?.length ?? 0} from ${c.body?.responseURL}`)
+  assert.ok(call, `no products from ${where} were sent to ${API}/listitemsapi with responseURL ${responseURL} (sent: [${seen.join(', ')}])`)
   assert.equal(call.method, 'POST')
   assert.equal(call.body.href, page.url())
   return call
@@ -208,7 +209,7 @@ export async function checkHomePage({ page, apiCalls }) {
     return found
   }))
   assert.ok(ids.size > 0, 'Daraz page changed: the homepage has no products in window.__FIRST_SCREEN_DATA')
-  await expectItemsSent(page, apiCalls, ids, 'the products embedded in the homepage')
+  await expectItemsSent(page, apiCalls, ids, 'the products embedded in the homepage', page.url().split('#')[0])
 }
 
 // Search pages load their products with background requests (catalog/?ajax=true...),
@@ -219,12 +220,12 @@ export async function checkSearchPage({ page, apiCalls, productLists }) {
   const isList = (pageNumber) => (list) => list.url.includes('ajax=true') && new URL(list.url).searchParams.get('page') === pageNumber
   const first = await waitFor(() => productLists.find(isList('1')))
   assert.ok(first, 'Daraz page changed: no product list request (catalog/?ajax=true&page=1) on the search page')
-  await expectItemsSent(page, apiCalls, first.ids, 'the page 1 product list')
+  await expectItemsSent(page, apiCalls, first.ids, 'the page 1 product list', first.url)
 
   assert.ok(await goToNextPage(page), 'Daraz page changed: no next page button (.ant-pagination-next button) on the search page')
   const second = await waitFor(() => productLists.find(isList('2')))
   assert.ok(second, 'Daraz page changed: going to page 2 did not request catalog/?ajax=true&page=2')
-  await expectItemsSent(page, apiCalls, new Set([...second.ids].filter((id) => !first.ids.has(id))), 'the page 2 product list')
+  await expectItemsSent(page, apiCalls, new Set([...second.ids].filter((id) => !first.ids.has(id))), 'the page 2 product list', second.url)
 
   assert.equal(await page.$('#pasaley-host'), null, 'price chart should only be on product pages')
 }
