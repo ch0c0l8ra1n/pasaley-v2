@@ -1,4 +1,5 @@
 import { getHostCountry } from "@/lib/utils";
+import { version } from "../../public/manifest.json";
 
 class API{
     // Set at build time from the .env file for the build (see README).
@@ -18,8 +19,12 @@ class API{
         try{
             resp = await fetch(input,{
                 credentials: 'include',
-                ...initOptions
-            });   
+                ...initOptions,
+                headers: {
+                    "X-Pasaley-Version": version,
+                    ...initOptions.headers
+                }
+            });
         }
         catch (err){
             throw new Error(`Failed to fetch.`);
