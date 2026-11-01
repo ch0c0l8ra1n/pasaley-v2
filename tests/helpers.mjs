@@ -1,11 +1,12 @@
 // Shared by the browser tests and the recorder: launching browsers, opening pages with
 // the Pasaley API answered by the test, replaying recorded Daraz pages, and the checks.
 import assert from 'node:assert/strict'
+import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 import puppeteer from 'puppeteer-core'
 
-export const API = process.env.API_URL ?? 'https://www.pasaley.com/api/v2'
+export const API = process.env.API_URL ?? 'https://www.pasaley.com/api/v3'
 export const EXTENSION = path.resolve(process.env.EXTENSION_DIR ?? 'dist')
 export const PAGES = JSON.parse(fs.readFileSync(new URL('./pages.json', import.meta.url)))
 export const RECORDINGS = new URL('./recordings/', import.meta.url).pathname
@@ -108,19 +109,43 @@ export async function open(browser, url, recording) {
   return { page, apiCalls, productLists }
 }
 
+// Keys the extension registered with the mock API, by key id (as the real API: the
+// base64url SHA-256 of the key).
+const installKeys = new Map()
+
 async function answerApi(page, request, apiCalls) {
+  // As the real v3: any origin, no cookies.
   const headers = {
-    'Access-Control-Allow-Origin': new URL(page.url()).origin,
-    'Access-Control-Allow-Credentials': 'true',
-    'Access-Control-Allow-Headers': 'Content-Type, X-Pasaley-Version',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': request.headers()['access-control-request-headers'] ?? '*',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   }
   if (request.method() === 'OPTIONS') return request.respond({ status: 204, headers })
 
-  const body = await request.fetchPostData().catch(() => undefined)
-  apiCalls.push({ url: new URL(request.url()), method: request.method(), version: request.headers()['x-pasaley-version'], body: parseJson(body ?? '') })
-  const reply = request.url().includes('/pricehistory') ? { data: { prices: PRICES } } : { ok: true }
-  request.respond({ status: 200, headers, contentType: 'application/json', body: JSON.stringify(reply) })
+  const url = new URL(request.url())
+  const body = await request.fetchPostData().catch(() => undefined) ?? ''
+  const call = { url, method: request.method(), version: request.headers()['x-pasaley-version'], body: parseJson(body), signed: isSigned(request, url, body) }
+  apiCalls.push(call)
+
+  let data = { message: 'SUCCESS' }
+  if (url.pathname.endsWith('/pricehistory')) data = { prices: PRICES }
+  if (url.pathname.endsWith('/config')) data = { minimumVersion: null, serverTime: new Date().toISOString() }
+  if (url.pathname.endsWith('/keys')) {
+    const der = Buffer.from(call.body.publicKey, 'base64url')
+    const keyId = crypto.createHash('sha256').update(der).digest('base64url')
+    installKeys.set(keyId, crypto.createPublicKey({ key: der, format: 'der', type: 'spki' }))
+    data = { keyId }
+  }
+  request.respond({ status: 200, headers, contentType: 'application/json', body: JSON.stringify({ success: true, data }) })
+}
+
+// Checks the request's signature the way the real API does.
+function isSigned(request, url, body) {
+  const h = request.headers()
+  const key = installKeys.get(h['x-pasaley-key'])
+  if (!key || !h['x-pasaley-signature'] || Math.abs(Date.now() - Number(h['x-pasaley-timestamp'])) > 10 * 60 * 1000) return false
+  const message = `${h['x-pasaley-timestamp']}\n${h['x-pasaley-nonce']}\n${request.method()} ${url.pathname}\n${body}`
+  return crypto.verify('sha256', Buffer.from(message), { key, dsaEncoding: 'ieee-p1363' }, Buffer.from(h['x-pasaley-signature'], 'base64url'))
 }
 
 // Answers a browser's "may I send this?" (CORS preflight) check with yes. Recordings leave these out.
@@ -181,19 +206,20 @@ export const captchaShown = (page) => page.evaluate(() =>
 const interceptorRunning = (page) =>
   page.evaluate(() => !XMLHttpRequest.prototype.open.toString().includes('[native code]'))
 
-const listCalls = (apiCalls) => apiCalls.filter((c) => c.url.pathname.endsWith('/listitemsapi'))
+const listCalls = (apiCalls) => apiCalls.filter((c) => c.url.pathname.endsWith('/ingest/products'))
 
 // Waits for a list of products to be sent to the API whose products all come from `source`.
 // responseURL: the URL of the response the products came from, which the extension sends along.
 async function expectItemsSent(page, apiCalls, source, where, responseURL) {
   const call = await waitFor(() => listCalls(apiCalls).find((c) => {
-    const sent = (c.body?.listItems ?? []).map((item) => String(item.itemId))
-    return sent.length > 0 && sent.every((id) => source.has(id)) && c.body.responseURL === responseURL
+    const sent = (c.body?.items ?? []).map((item) => String(item.itemId))
+    return sent.length > 0 && sent.every((id) => source.has(id)) && c.body.responseUrl === responseURL
   }))
-  const seen = listCalls(apiCalls).map((c) => `${c.body?.listItems?.length ?? 0} from ${c.body?.responseURL}`)
-  assert.ok(call, `no products from ${where} were sent to ${API}/listitemsapi with responseURL ${responseURL} (sent: [${seen.join(', ')}])`)
+  const seen = listCalls(apiCalls).map((c) => `${c.body?.items?.length ?? 0} from ${c.body?.responseUrl}`)
+  assert.ok(call, `no products from ${where} were sent to ${API}/ingest/products with responseUrl ${responseURL} (sent: [${seen.join(', ')}])`)
   assert.equal(call.method, 'POST')
   assert.equal(call.version, VERSION)
+  assert.ok(call.signed, 'products were sent without a valid signature')
   assert.equal(call.body.href, page.url())
   return call
 }

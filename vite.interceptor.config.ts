@@ -13,12 +13,14 @@ export default defineConfig(({ mode }) => ({
         outDir: outDir(mode),
         rollupOptions: {
             input: {
-                interceptor: 'src/content-scripts/interceptor/interceptor.ts'
+                interceptor: 'src/content-scripts/interceptor/interceptor.ts',
+                signer: 'src/content-scripts/signer/signer.ts',
             },
             output: {
-                entryFileNames: 'assets/interceptor/[name].js',
-                chunkFileNames: 'assets/interceptor/[name].js',
-                assetFileNames: 'assets/interceptor/[name].[ext]'
+                // Content scripts can't import, so these two must not share a chunk.
+                entryFileNames: 'assets/[name]/[name].js',
+                chunkFileNames: 'assets/shared/[name].js',
+                assetFileNames: 'assets/[name]/[name].[ext]'
             }
         },
         // minify: false,

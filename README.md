@@ -10,10 +10,11 @@ A browser extension that shows the price history of products on Daraz (Nepal, Pa
 
 Price history is crowd-sourced: there is no crawler. Each installed extension reports the prices it sees, and everyone's chart is built from those reports.
 
-- **On every Daraz page**, a page script (`src/content-scripts/interceptor/interceptor.ts`) reads the product lists that Daraz's own page data and requests contain (product id, name, image, price, rating, reviews, sold count, seller). It sends them to the Pasaley API with the page's URL and the URL of the request they came from. It also reports clicks on "Add to cart" and "Buy now" on product pages.
+- **On every Daraz page**, a page script (`src/content-scripts/interceptor/interceptor.ts`) reads the product lists that Daraz's own page data and requests contain (product id, name, image, price, rating, reviews, sold count, seller). It hands them, with the page's URL and the URL of the request they came from, to a content script (`src/content-scripts/signer/signer.ts`) that sends them to the Pasaley API. It also reports clicks on "Add to cart" and "Buy now" on product pages.
+- **Requests are signed.** On first use the extension makes a key pair for this install (ECDSA P-256), registers the public key with the API, and signs every report with the private key. The key is kept in the extension's own storage (the `storage` permission), where scripts on Daraz pages can't reach it.
 - **On product pages**, a content script (`src/content-scripts/chart/`) adds a price-history chart to the price section, using the prices the API has recorded for that product.
 
-The API is `https://www.pasaley.com/api/v2` (`src/lib/api.ts`).
+The API is `https://www.pasaley.com/api/v3` (`src/lib/api.ts`).
 
 ## Project layout
 
@@ -21,6 +22,7 @@ The API is `https://www.pasaley.com/api/v2` (`src/lib/api.ts`).
 |---|---|
 | `public/manifest.json` | The extension manifest (version, permissions, Firefox ID) |
 | `src/content-scripts/interceptor/` | The page script that reads product lists |
+| `src/content-scripts/signer/` | The content script that signs and sends them |
 | `src/content-scripts/chart/` | The content script that adds the chart, in a shadow root |
 | `src/components/chart/` | The price chart (Highcharts) |
 | `src/lib/api.ts` | Calls to the Pasaley API |
@@ -46,8 +48,8 @@ The extension is built into `dist/`. The same build works in both Chrome and Fir
 
 | Command | Output | API | Name in the browser |
 |---|---|---|---|
-| `npm run build` | `dist/` | `https://www.pasaley.com/api/v2` | Pasaley \| Daraz Price Tracker |
-| `npm run build:dev` | `dist-dev/` | `https://127.0.0.1/api/v2` | Pasaley (Dev) |
+| `npm run build` | `dist/` | `https://www.pasaley.com/api/v3` | Pasaley \| Daraz Price Tracker |
+| `npm run build:dev` | `dist-dev/` | `https://127.0.0.1/api/v3` | Pasaley (Dev) |
 | `npm run build:staging` | `dist-staging/` | `VITE_API_URL` (see below) | Pasaley (Staging) |
 
 Only `npm run build` is released to the stores. The dev and staging builds have their own name and Firefox ID, so you can install them next to the released extension.
@@ -108,7 +110,7 @@ Options (environment variables):
 
 - `BROWSERS=chrome` or `BROWSERS=firefox` to test one browser.
 - `SHOW=1` to watch the browsers instead of running them headless.
-- `EXTENSION_DIR=dist-dev API_URL=https://127.0.0.1/api/v2` to test another build. Run `npm run build:dev` first. `API_URL` must match the build.
+- `EXTENSION_DIR=dist-dev API_URL=https://127.0.0.1/api/v3` to test another build. Run `npm run build:dev` first. `API_URL` must match the build.
 - `CHROME_PATH` and `FIREFOX_PATH` if the browsers aren't in `/Applications`.
 
 ## Releasing

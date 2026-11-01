@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Pasaley | Daraz Price Tracker",
-    "version": "1.0.8",
+    "version": "1.1.0",
     "description": "Pasaley is a daraz price tracker.",
     "content_scripts": [
       {
@@ -30,7 +30,22 @@
         "css": [],
         "world": "MAIN",
         "run_at": "document_start"
+      },
+      {
+        "matches": [
+          "https://www.daraz.com.np/*",
+          "https://www.daraz.pk/*",
+          "https://www.daraz.com.bd/*",
+          "https://www.daraz.lk/*"
+        ],
+        "js": [
+          "assets/signer/signer.js"
+        ],
+        "run_at": "document_start"
       }
+    ],
+    "permissions": [
+      "storage"
     ],
     "web_accessible_resources": [
       {
