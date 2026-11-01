@@ -1,9 +1,32 @@
 # Pasaley
 
-A browser extension that shows the price history of products on Daraz (Nepal, Pakistan, Bangladesh and Sri Lanka).
+A browser extension that shows the price history of products on Daraz (Nepal, Pakistan, Bangladesh and Sri Lanka), so you can tell whether today's price is a real deal.
 
 - Chrome: [Chrome Web Store](https://chromewebstore.google.com/detail/bfnanpnikodnmncpnhdolkjdpjkkhlce)
-- Firefox: [Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/pasaley/)
+- Firefox: [Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/pasaley/) (still on 1.0.6, see [Releasing](#releasing))
+- Community: [Discord](https://discord.gg/nYV9YmMkrP), [Facebook group](https://www.facebook.com/groups/426788549717971)
+
+## How it works
+
+Price history is crowd-sourced: there is no crawler. Each installed extension reports the prices it sees, and everyone's chart is built from those reports.
+
+- **On every Daraz page**, a page script (`src/content-scripts/interceptor/interceptor.ts`) reads the product lists that Daraz's own page data and requests contain (product id, name, image, price, rating, reviews, sold count, seller). It sends them to the Pasaley API with the page's URL and the URL of the request they came from. It also reports clicks on "Add to cart" and "Buy now" on product pages.
+- **On product pages**, a content script (`src/content-scripts/chart/`) adds a price-history chart to the price section, using the prices the API has recorded for that product.
+
+The API is `https://www.pasaley.com/api/v2` (`src/lib/api.ts`).
+
+## Project layout
+
+| Path | What's there |
+|---|---|
+| `public/manifest.json` | The extension manifest (version, permissions, Firefox ID) |
+| `src/content-scripts/interceptor/` | The page script that reads product lists |
+| `src/content-scripts/chart/` | The content script that adds the chart, in a shadow root |
+| `src/components/chart/` | The price chart (Highcharts) |
+| `src/lib/api.ts` | Calls to the Pasaley API |
+| `playground/` | A local page for working on the chart (see below) |
+| `tests/` | Browser tests in Chrome and Firefox (see below) |
+| `scripts/` | Helpers for the Release workflow |
 
 ## Building from source
 
@@ -92,11 +115,13 @@ Options (environment variables):
 
 Every pull request and push to `main` is linted and built by the CI workflow.
 
+> **Firefox releases are not working at the moment.** The Release workflow can't publish to Firefox Add-ons, so Firefox stays on 1.0.6 while Chrome gets new versions. Don't count on the workflow for Firefox until the maintainer confirms it works again. Until then, a release goes to the Chrome Web Store only.
+
 To release a new version:
 
 1. Bump `version` in `public/manifest.json` and merge that to `main`.
-2. Dry run: go to Actions → Release → Run workflow, leave "publish" off. It builds, lints and checks that it can sign in to both stores, but submits nothing.
-3. Release: run it again with "publish" on. It submits the new version to Firefox Add-ons (with the source code) and the Chrome Web Store, then creates a GitHub release with both zips.
+2. Dry run: go to Actions → Release → Run workflow, leave "publish" off. It builds, lints and checks that it can sign in to the stores, but submits nothing.
+3. Release: run it again with "publish" on. It submits the new version to the Chrome Web Store (and to Firefox Add-ons, with the source code, once that works again), then creates a GitHub release with the extension and source zips.
 
 Or from a terminal:
 
@@ -108,6 +133,6 @@ gh workflow run release.yml -f publish=false
 gh workflow run release.yml -f publish=true
 ```
 
-The release job runs in the `stores` environment, which holds the store keys and needs an approval before it runs. A store whose keys are not set is skipped.
+The release job runs in the `stores` environment, which holds the store keys. A store whose keys are not set is skipped.
 
-Both stores review every submission, so a release goes live when it passes review (usually hours on Chrome, can be longer on Firefox). Re-running a release skips any store that already has the version.
+Both stores review every submission, so a release goes live when it passes review (usually hours on Chrome, can be longer on Firefox). Re-running a release skips any store that already has the version. A version is released once: after `v1.0.7` was tagged for Chrome, Firefox's next release has to be a new version.
