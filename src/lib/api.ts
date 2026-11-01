@@ -28,7 +28,7 @@ class API{
                 credentials: 'omit',
                 ...initOptions,
                 headers: {
-                    "X-Pasaley-Version": version,
+                    "X-Pasaley-Version": version + (import.meta.env.VITE_VERSION_SUFFIX ?? ""),
                     ...initOptions.headers
                 }
             });
