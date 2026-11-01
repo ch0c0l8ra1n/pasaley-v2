@@ -9,6 +9,7 @@ export const API = process.env.API_URL ?? 'https://www.pasaley.com/api/v2'
 export const EXTENSION = path.resolve(process.env.EXTENSION_DIR ?? 'dist')
 export const PAGES = JSON.parse(fs.readFileSync(new URL('./pages.json', import.meta.url)))
 export const RECORDINGS = new URL('./recordings/', import.meta.url).pathname
+export const VERSION = JSON.parse(fs.readFileSync(path.join(EXTENSION, 'manifest.json'))).version
 export const BROWSERS = (process.env.BROWSERS ?? 'chrome,firefox').split(',')
 const HEADLESS = !process.env.SHOW
 
@@ -111,13 +112,13 @@ async function answerApi(page, request, apiCalls) {
   const headers = {
     'Access-Control-Allow-Origin': new URL(page.url()).origin,
     'Access-Control-Allow-Credentials': 'true',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, X-Pasaley-Version',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   }
   if (request.method() === 'OPTIONS') return request.respond({ status: 204, headers })
 
   const body = await request.fetchPostData().catch(() => undefined)
-  apiCalls.push({ url: new URL(request.url()), method: request.method(), body: parseJson(body ?? '') })
+  apiCalls.push({ url: new URL(request.url()), method: request.method(), version: request.headers()['x-pasaley-version'], body: parseJson(body ?? '') })
   const reply = request.url().includes('/pricehistory') ? { data: { prices: PRICES } } : { ok: true }
   request.respond({ status: 200, headers, contentType: 'application/json', body: JSON.stringify(reply) })
 }
@@ -192,6 +193,7 @@ async function expectItemsSent(page, apiCalls, source, where, responseURL) {
   const seen = listCalls(apiCalls).map((c) => `${c.body?.listItems?.length ?? 0} from ${c.body?.responseURL}`)
   assert.ok(call, `no products from ${where} were sent to ${API}/listitemsapi with responseURL ${responseURL} (sent: [${seen.join(', ')}])`)
   assert.equal(call.method, 'POST')
+  assert.equal(call.version, VERSION)
   assert.equal(call.body.href, page.url())
   return call
 }
@@ -241,6 +243,7 @@ export async function checkProductPage({ page, apiCalls }, url) {
 
   const call = await waitFor(() => apiCalls.find((c) => c.url.pathname.endsWith('/pricehistory')))
   assert.ok(call, `no request to ${API}/pricehistory`)
+  assert.equal(call.version, VERSION)
   assert.equal(call.url.searchParams.get('id'), url.match(/-i(\d+)/)[1], 'price history asked for the wrong product')
   assert.equal(call.url.searchParams.get('hostCountry'), countryOf(url), 'price history asked for the wrong country')
 
