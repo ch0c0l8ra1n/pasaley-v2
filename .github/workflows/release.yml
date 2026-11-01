@@ -73,29 +73,36 @@ jobs:
 
       - name: Check store access
         run: |
-          if [ -z "$AMO_JWT_ISSUER" ] || [ -z "$AMO_JWT_SECRET" ] || [ -z "$CHROME_SERVICE_ACCOUNT_JSON" ] || [ -z "$CHROME_PUBLISHER_ID" ]; then
-            if [ "$PUBLISH" = true ]; then
-              echo "::error::Store secrets are missing from the 'stores' environment."
-              exit 1
-            fi
-            echo "::warning::Store secrets are not set, so store access was not checked."
-            exit 0
+          # A store whose keys aren't set is skipped; a release needs at least one.
+          if [ -n "$AMO_JWT_ISSUER" ] && [ -n "$AMO_JWT_SECRET" ]; then
+            node scripts/amo-versions.mjs "$AMO_ID" > amo-versions.txt
+            echo "Firefox Add-ons: signed in. Latest versions:"
+            head -3 amo-versions.txt
+            echo "AMO=true" >> "$GITHUB_ENV"
+          else
+            echo "::warning::Firefox Add-ons keys are not set, so Firefox is skipped."
           fi
 
-          node scripts/amo-versions.mjs "$AMO_ID" > amo-versions.txt
-          echo "Firefox Add-ons: signed in. Latest versions:"
-          head -3 amo-versions.txt
+          if [ -n "$CHROME_SERVICE_ACCOUNT_JSON" ] && [ -n "$CHROME_PUBLISHER_ID" ]; then
+            TOKEN=$(node scripts/chrome-token.mjs)
+            echo "::add-mask::$TOKEN"
+            echo "CHROME_TOKEN=$TOKEN" >> "$GITHUB_ENV"
+            curl -sS --fail-with-body -H "Authorization: Bearer $TOKEN" \
+              "$CHROME_API/v2/publishers/$CHROME_PUBLISHER_ID/items/$CHROME_ID:fetchStatus" > chrome-status.json
+            echo "Chrome Web Store: signed in. Current status:"
+            jq . chrome-status.json
+            echo "CHROME=true" >> "$GITHUB_ENV"
+          else
+            echo "::warning::Chrome Web Store keys are not set, so Chrome is skipped."
+          fi
 
-          TOKEN=$(node scripts/chrome-token.mjs)
-          echo "::add-mask::$TOKEN"
-          echo "CHROME_TOKEN=$TOKEN" >> "$GITHUB_ENV"
-          curl -sS --fail-with-body -H "Authorization: Bearer $TOKEN" \
-            "$CHROME_API/v2/publishers/$CHROME_PUBLISHER_ID/items/$CHROME_ID:fetchStatus" > chrome-status.json
-          echo "Chrome Web Store: signed in. Current status:"
-          jq . chrome-status.json
+          if [ ! -f amo-versions.txt ] && [ ! -f chrome-status.json ] && [ "$PUBLISH" = true ]; then
+            echo "::error::No store keys are set in the 'stores' environment."
+            exit 1
+          fi
 
       - name: Submit to Firefox Add-ons
-        if: inputs.publish
+        if: inputs.publish && env.AMO == 'true'
         run: |
           if grep -qx "$VERSION" amo-versions.txt; then
             echo "$VERSION is already on Firefox Add-ons, skipping."
@@ -107,7 +114,7 @@ jobs:
             --approval-timeout 0
 
       - name: Submit to Chrome Web Store
-        if: inputs.publish
+        if: inputs.publish && env.CHROME == 'true'
         run: |
           ITEM="$CHROME_API/v2/publishers/$CHROME_PUBLISHER_ID/items/$CHROME_ID"
           AUTH="Authorization: Bearer $CHROME_TOKEN"
