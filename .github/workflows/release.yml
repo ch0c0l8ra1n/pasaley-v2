@@ -21,6 +21,10 @@ jobs:
   release:
     runs-on: ubuntu-latest
     environment: stores
+    defaults:
+      run:
+        # Adds pipefail, so a failing curl in `curl | jq` fails the step.
+        shell: bash
     permissions:
       contents: write
     env:
