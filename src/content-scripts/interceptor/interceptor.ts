@@ -6,9 +6,9 @@ const api = new API();
 document.addEventListener("click", (event: MouseEvent) => {
     // console.log("Pasaley click tracking.");
     const productId = getProductId();
-    const hostcountry = getHostCountry();
+    const hostCountry = getHostCountry();
 
-    if (!productId || !hostcountry) return;
+    if (!productId || !hostCountry) return;
 
     console.log("Product ID:", productId);
 
@@ -31,8 +31,8 @@ document.addEventListener("click", (event: MouseEvent) => {
             api.ingestClick({
                 type: "addtocart",
                 id: productId,
-                hostcountry,
-                quantity,
+                hostCountry,
+                quantity: Number(quantity),
             });
         }
         // now do buy now
@@ -44,8 +44,8 @@ document.addEventListener("click", (event: MouseEvent) => {
             api.ingestClick({
                 type: "buynow",
                 id: productId,
-                hostcountry,
-                quantity,
+                hostCountry,
+                quantity: Number(quantity),
             });
         }
     } else {
@@ -137,7 +137,7 @@ window.XMLHttpRequest.prototype.open = function() {
             const processedItems = processItems(items);
 
             if (items.length > 0)
-                await api.sendListItems(processedItems, url);
+                api.sendListItems(processedItems, url);
 
         }
         catch (err){
@@ -181,7 +181,7 @@ callWhenBodyIsReady(async () => {
             const processedItems = processItems(items);
             // This data is embedded in the page itself, so the page is the response
             // (without its #fragment, which a response URL never has).
-            await api.sendListItems(processedItems, window.location.href.split('#')[0]);
+            api.sendListItems(processedItems, window.location.href.split('#')[0]);
         }
         catch (err){
             console.error(err);
