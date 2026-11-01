@@ -1,5 +1,7 @@
 import API from "@/lib/api";
 import { getProductId, getHostCountry, getItemQuantity } from "@/lib/utils";
+import { readProductPage } from "@/lib/product-page";
+import { publishSkus, selectedSkuFromUrl } from "@/lib/skus";
 
 const api = new API();
 
@@ -187,4 +189,33 @@ callWhenBodyIsReady(async () => {
             console.error(err);
         }
     }
+});
+
+// On a product page, report every variant's price from the page's own data, and
+// tell the chart (which can't read page scripts' variables) about the variants.
+const PRODUCT_PAGE = /-i\d+(-s\d+)?\.html$/;
+callWhenBodyIsReady(async () => {
+    if (!PRODUCT_PAGE.test(window.location.pathname)) return;
+    const win = window as typeof window & { __moduleData__?: any };
+    for (let i = 0; i < 40 && !win.__moduleData__?.data?.root?.fields; i++) await asleep(250);
+    const fields = win.__moduleData__?.data?.root?.fields;
+    if (!fields) return;
+
+    const page = readProductPage(fields, window.location.href.split(/[?#]/)[0]);
+    if (!page) return;
+    api.post("/ingest/product-page", page);
+
+    const skus = page.skus.map(({ skuId, name }) => ({ skuId, name }));
+    const update = () => publishSkus({ selected: selectedSkuFromUrl(window.location.pathname) ?? page.selectedSkuId, skus });
+    update();
+    // Choosing a variant changes the URL to ...-s<skuId>.html without loading a page.
+    for (const method of ["pushState", "replaceState"] as const) {
+        const original = history[method];
+        history[method] = function (this: History, ...args: Parameters<History["pushState"]>) {
+            const result = original.apply(this, args);
+            update();
+            return result;
+        };
+    }
+    window.addEventListener("popstate", update);
 });

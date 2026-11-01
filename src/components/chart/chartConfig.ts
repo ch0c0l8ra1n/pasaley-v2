@@ -100,15 +100,23 @@ export const ChartConfig: Highcharts.Options= {
     }]
 }
 
-export const makeOptions = (data: Array<Array<number>>) => ({
-    ...ChartConfig,
-    rangeSelector: {
-        ...ChartConfig.rangeSelector,
-        enabled: data.length > 0
-    },
-    series: [{
-        ...(ChartConfig.series?.[0] ?? {}),
-        data: data.length > 0 ? data : dummyData
-    }]
+// Other variants' lines, after the main one (Highcharts' default palette).
+const VARIANT_COLORS = ['#7cb5ec', '#434348', '#90ed7d', '#f7a35c', '#8085e9', '#f15c80', '#e4d354', '#2b908f', '#f45b5b', '#91e8e1'];
 
-});
+// The first series is drawn as the shaded area, any others (other variants) as plain lines.
+export const makeOptions = (series: { name: string; data: Array<Array<number>> }[]) => {
+    const withData = series.filter((s) => s.data.length > 0);
+    return {
+        ...ChartConfig,
+        rangeSelector: {
+            ...ChartConfig.rangeSelector,
+            enabled: withData.length > 0
+        },
+        legend: { enabled: withData.length > 1 },
+        series: withData.length === 0
+            ? [{ ...(ChartConfig.series?.[0] ?? {}), data: dummyData }]
+            : withData.map((s, i) => i === 0
+                ? { ...(ChartConfig.series?.[0] ?? {}), name: s.name, data: s.data }
+                : { type: 'line', name: s.name, data: s.data, color: VARIANT_COLORS[(i - 1) % VARIANT_COLORS.length] }),
+    };
+};

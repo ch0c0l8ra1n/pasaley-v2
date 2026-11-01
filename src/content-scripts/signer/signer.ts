@@ -5,7 +5,7 @@ import type { SignedPost } from "@/lib/api";
 
 const API = import.meta.env.VITE_API_URL;
 const VERSION = chrome.runtime.getManifest().version + (import.meta.env.VITE_VERSION_SUFFIX ?? "");
-const PATHS: SignedPost["path"][] = ["/ingest/products", "/ingest/clicks"];
+const PATHS: SignedPost["path"][] = ["/ingest/products", "/ingest/clicks", "/ingest/product-page"];
 const ECDSA = { name: "ECDSA", namedCurve: "P-256" };
 
 interface Install {
