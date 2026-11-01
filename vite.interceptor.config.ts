@@ -15,9 +15,11 @@ export default defineConfig(({ mode }) => ({
             input: {
                 interceptor: 'src/content-scripts/interceptor/interceptor.ts',
                 signer: 'src/content-scripts/signer/signer.ts',
+                background: 'src/background/background.ts',
+                account: 'src/account/account.ts',
             },
             output: {
-                // Content scripts can't import, so these two must not share a chunk.
+                // None of these can import, so they must not share a chunk.
                 entryFileNames: 'assets/[name]/[name].js',
                 chunkFileNames: 'assets/shared/[name].js',
                 assetFileNames: 'assets/[name]/[name].[ext]'

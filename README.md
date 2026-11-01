@@ -14,6 +14,8 @@ Price history is crowd-sourced: there is no crawler. Each installed extension re
 - **Requests are signed.** On first use the extension makes a key pair for this install (ECDSA P-256), registers the public key with the API, and signs every report with the private key. The key is kept in the extension's own storage (the `storage` permission), where scripts on Daraz pages can't reach it.
 - **On product pages**, a content script (`src/content-scripts/chart/`) adds a price-history chart to the price section, using the prices the API has recorded for that product.
 
+- **Price alerts:** you sign in on pasaley.com in a normal tab, and the extension's background worker (`src/background/background.ts`) then uses that site's cookie for your account. The Alerts tab on the chart and the account page (the toolbar icon) set alerts through it. It asks for the `notifications` permission only when you turn notifications on, and shows them from web push messages.
+
 The API is `https://www.pasaley.com/api/v3` (`src/lib/api.ts`).
 
 ## Project layout
@@ -25,6 +27,9 @@ The API is `https://www.pasaley.com/api/v3` (`src/lib/api.ts`).
 | `src/content-scripts/signer/` | The content script that signs and sends them |
 | `src/content-scripts/chart/` | The content script that adds the chart, in a shadow root |
 | `src/components/chart/` | The price chart (Highcharts) |
+| `src/components/alerts-tab.tsx` | The chart's Alerts tab |
+| `src/background/` | The background worker: account calls and push notifications |
+| `src/account/`, `public/account.html` | The account page |
 | `src/lib/api.ts` | Calls to the Pasaley API |
 | `playground/` | A local page for working on the chart (see below) |
 | `tests/` | Browser tests in Chrome and Firefox (see below) |

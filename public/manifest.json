@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Pasaley | Daraz Price Tracker",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "description": "Pasaley is a daraz price tracker.",
     "content_scripts": [
       {
@@ -47,6 +47,18 @@
     "permissions": [
       "storage"
     ],
+    "optional_permissions": [
+      "notifications"
+    ],
+    "action": {
+      "default_title": "Pasaley account"
+    },
+    "background": {
+      "service_worker": "assets/background/background.js",
+      "scripts": [
+        "assets/background/background.js"
+      ]
+    },
     "web_accessible_resources": [
       {
         "resources": [

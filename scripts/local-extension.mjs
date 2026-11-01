@@ -14,7 +14,8 @@ const build = () => {
   for (const config of ['vite.interceptor.config.ts', 'vite.chartApp.config.ts']) {
     execSync(`npx vite build -c ${config} --mode personal --logLevel warn`, { stdio: 'inherit' })
   }
-  fs.copyFileSync('scripts/local-reload.js', path.join(dir, 'local-reload.js'))
+  const reload = fs.readFileSync('scripts/local-reload.js', 'utf8')
+  fs.writeFileSync(path.join(dir, 'local-reload.js'), `importScripts('assets/background/background.js');\n${reload}`)
 
   const manifestFile = path.join(dir, 'manifest.json')
   const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8'))

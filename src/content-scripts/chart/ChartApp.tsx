@@ -2,6 +2,8 @@ import PriceChart from '@/components/chart/price-chart';
 import { useEffect, useState } from 'react';
 import ChartAppLayout from '@/components/chart-app-layout';
 import API from '@/lib/api';
+import AlertsTab from '@/components/alerts-tab';
+import { isExtension } from '@/lib/utils';
 const api = new API();
 
 interface ChartAppProps {
@@ -40,7 +42,7 @@ const ChartApp = ({productId,hostCountry}: ChartAppProps) => {
         },
         tab2: {
             title: "Alerts",
-            content: <div>Coming soon!</div>
+            content: isExtension() ? <AlertsTab productId={productId} hostCountry={hostCountry} /> : <div>Coming soon!</div>
         }
     }
     
