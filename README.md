@@ -108,6 +108,6 @@ gh workflow run release.yml -f publish=false
 gh workflow run release.yml -f publish=true
 ```
 
-The release job runs in the `stores` environment, which holds the store keys and needs an approval before it runs.
+The release job runs in the `stores` environment, which holds the store keys and needs an approval before it runs. A store whose keys are not set is skipped.
 
 Both stores review every submission, so a release goes live when it passes review (usually hours on Chrome, can be longer on Firefox). Re-running a release skips any store that already has the version.
