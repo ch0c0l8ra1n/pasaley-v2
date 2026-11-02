@@ -274,6 +274,13 @@ export async function checkProductPage({ page, apiCalls }, url) {
   assert.equal(report.body.itemId, url.match(/-i(\d+)/)[1], 'product page sent for the wrong item')
   assert.equal(report.body.href, page.url().split(/[?#]/)[0])
   assert.ok(report.body.skus.length > 0 && report.body.skus.every((sku) => /^\d+$/.test(sku.skuId)), 'product page sent without its variants')
+  const { seller } = report.body
+  assert.ok(seller && /^\d+$/.test(seller.id), 'Daraz page changed: product page sent without its seller')
+  for (const key of ['positiveRating', 'shipOnTime', 'chatResponseRate']) {
+    assert.ok(seller[key] === undefined || (seller[key] >= 0 && seller[key] <= 1), `seller ${key} should be a share: ${seller[key]}`)
+  }
+  assert.ok(seller.timeOnDaraz === undefined || (Number.isInteger(seller.timeOnDaraz.value) && seller.timeOnDaraz.unit), `bad seller timeOnDaraz: ${JSON.stringify(seller.timeOnDaraz)}`)
+  assert.ok(Object.values(seller).every((value) => value !== null), 'seller fields should be left out, not null')
   const skus = JSON.parse(await page.evaluate(() => document.documentElement.getAttribute('data-pasaley-skus')) ?? 'null')
   assert.ok(skus?.skus.length === report.body.skus.length, 'the chart was not told about the variants')
 

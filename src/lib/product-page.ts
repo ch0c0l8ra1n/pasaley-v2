@@ -9,6 +9,20 @@ export interface ProductPageSku {
     image?: string;
 }
 
+// Shares are 0..1; time on Daraz is as the page shows it, like 5 years.
+export interface ProductPageSeller {
+    id: string;
+    name?: string;
+    positiveRating?: number;
+    shipOnTime?: number;
+    chatResponseRate?: number;
+    timeOnDaraz?: { value: number; unit: string };
+    rateLevel?: number;
+    newSeller?: boolean;
+    type?: string;
+    size?: number;
+}
+
 export interface ProductPage {
     href: string;
     itemId: string;
@@ -17,7 +31,7 @@ export interface ProductPage {
     brand?: string;
     categoryId?: string;
     breadcrumb?: string[];
-    seller?: { id: string; name?: string; positiveRating?: number };
+    seller?: ProductPageSeller;
     rating?: { average: number; count: number };
     flashSaleSkuIds?: string[];
     skus: ProductPageSku[];
@@ -30,6 +44,30 @@ const pick = <T>(read: () => T): T | undefined => {
     } catch {
         return undefined;
     }
+};
+
+// "75%" as 0.75. Daraz leaves out the value when it hasn't enough data.
+const share = (metric: any): number | undefined => {
+    const match = /^(\d+(?:\.\d+)?)%$/.exec(String(metric?.value ?? "").trim());
+    return match ? Number(match[1]) / 100 : undefined;
+};
+
+const ofType = <T>(value: unknown, type: string): T | undefined => (typeof value === type ? value as T : undefined);
+
+const readSeller = (seller: any): ProductPageSeller | undefined => {
+    if (!seller?.sellerId) return undefined;
+    const stats: Omit<ProductPageSeller, "id" | "name"> = {
+        positiveRating: pick(() => seller.rate),
+        shipOnTime: share(seller.shipOnTime),
+        chatResponseRate: share(seller.chatResponsiveRate),
+        timeOnDaraz: typeof seller.time === "number" && seller.unit ? { value: seller.time, unit: String(seller.unit) } : undefined,
+        rateLevel: ofType<number>(seller.rateLevel, "number"),
+        newSeller: ofType<boolean>(seller.newSeller, "boolean"),
+        type: pick(() => ofType<string>(seller.type, "string")),
+        size: ofType<number>(seller.size, "number"),
+    };
+    const given = Object.fromEntries(Object.entries(stats).filter(([, value]) => value !== undefined));
+    return { id: String(seller.sellerId), name: seller.name || undefined, ...given };
 };
 
 // Options can be grouped, like sizes under "Int" or "EU".
@@ -69,7 +107,7 @@ export const readProductPage = (fields: any, href: string): ProductPage | null =
         brand: pick(() => fields.product.brand.name),
         categoryId: pick(() => String(fields.skuInfos[selectedSkuId!].categoryId)),
         breadcrumb: pick(() => fields.Breadcrumb.slice(0, -1).map((b: any) => b.title).filter(Boolean)),
-        seller: seller?.sellerId ? { id: String(seller.sellerId), name: seller.name || undefined, positiveRating: pick(() => seller.rate) } : undefined,
+        seller: readSeller(seller),
         rating: typeof ratings?.average === "number" ? { average: ratings.average, count: ratings.rateCount ?? 0 } : undefined,
         flashSaleSkuIds: pick(() => Object.keys(fields.flashSale)),
         skus,
