@@ -9,10 +9,15 @@
   <body>
     <header>
       <h1>Price chart playground</h1>
-      <p>The extension's chart with mock price history for Thermocot Men's Cotton Thermal Set (Rs. 545).</p>
+      <p id="status"></p>
     </header>
     <form id="controls">
       <fieldset id="scenario"><legend>Price history</legend></fieldset>
+      <fieldset>
+        <legend>Product (live)</legend>
+        <input name="link" type="url" size="48" value="https://www.daraz.com.np/products/apple-iphone-17-pro-max-oliz-store-i500511273-s2240555245.html" />
+        <select name="variant"></select>
+      </fieldset>
       <fieldset id="width">
         <legend>Width</legend>
         <label><input type="radio" name="width" value="420" checked /> 420px</label>
