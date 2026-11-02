@@ -4,6 +4,7 @@ import ChartAppLayout from '@/components/chart-app-layout';
 import API, { PriceHistory } from '@/lib/api';
 import { PageSkus, watchSkus } from '@/lib/skus';
 import { priceLines } from '@/lib/variants';
+import SharePrompt from '@/components/share-prompt';
 const api = new API();
 
 interface ChartAppProps {
@@ -61,12 +62,17 @@ const ChartApp = ({productId,hostCountry}: ChartAppProps) => {
             ? <>Showing all variants. <button className="underline cursor-pointer" onClick={() => setShowAll(false)}>Show only {nameOf(selected)}</button></>
             : <>No history for {nameOf(selected)} yet. Showing all variants.</>);
 
+    // Little history: under 5 prices, or seen over less than a week.
+    const shownTimes = series.flatMap((s) => s.data.map(([time]) => time));
+    const littleHistory = !loading && (shownTimes.length < 5 || Math.max(...shownTimes) - Math.min(...shownTimes) < 7 * 24 * 60 * 60 * 1000);
+
     const layout = {
         tab1: {
             title: "Price History",
             content: <>
                 {note && <p className="px-3 pt-1 text-xs">{note}</p>}
                 <PriceChart series={series} loading={loading} />
+                {littleHistory && <SharePrompt />}
             </>
         },
         tab2: {
