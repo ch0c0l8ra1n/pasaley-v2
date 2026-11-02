@@ -12,7 +12,7 @@ Highcharts.AST.allowedAttributes.push('viewBox');
 const SpinnerHTML = ReactDOMServer.renderToStaticMarkup(<Spinner/>)
 
 
-export type PriceSeries = { name: string; data: Array<[number, number]> };
+export type PriceSeries = { name: string; data: Array<[number, number]>; selected: boolean };
 
 type PriceChartProps = {
     series: PriceSeries[];
