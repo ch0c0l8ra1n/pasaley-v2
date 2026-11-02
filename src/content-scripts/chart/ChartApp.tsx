@@ -1,7 +1,7 @@
 import PriceChart from '@/components/chart/price-chart';
 import { useEffect, useState } from 'react';
 import ChartAppLayout from '@/components/chart-app-layout';
-import API, { PriceHistory } from '@/lib/api';
+import API, { PriceHistory, TooManyRequests } from '@/lib/api';
 import { PageSkus, watchSkus } from '@/lib/skus';
 import { priceLines } from '@/lib/variants';
 import SharePrompt from '@/components/share-prompt';
@@ -30,11 +30,28 @@ const ChartApp = ({productId,hostCountry}: ChartAppProps) => {
     const [loading, setLoading] = useState<boolean>(true);
     const [pageSkus, setPageSkus] = useState<PageSkus>({ skus: [] });
     const [showAll, setShowAll] = useState(false);
+    const [retryIn, setRetryIn] = useState<number | null>(null);
 
-    useEffect(() => { (async () => {
-        setHistory(await api.getPriceHistory(productId, hostCountry));
+    const load = async () => {
+        try {
+            setHistory(await api.getPriceHistory(productId, hostCountry));
+            setRetryIn(null);
+        } catch (err) {
+            if (!(err instanceof TooManyRequests)) throw err;
+            setRetryIn(err.retryAfter);
+        }
         setLoading(false);
-    })()}, [])
+    };
+
+    useEffect(() => { load(); }, [])
+
+    // Counts down, then tries again.
+    useEffect(() => {
+        if (retryIn === null) return;
+        if (retryIn <= 0) { load(); return; }
+        const timer = setTimeout(() => setRetryIn(retryIn - 1), 1000);
+        return () => clearTimeout(timer);
+    }, [retryIn])
 
     useEffect(() => watchSkus(setPageSkus), []);
 
@@ -69,11 +86,16 @@ const ChartApp = ({productId,hostCountry}: ChartAppProps) => {
     const layout = {
         tab1: {
             title: "Price History",
-            content: <>
-                {note && <p className="px-3 pt-1 text-xs">{note}</p>}
-                <PriceChart series={series} loading={loading} />
-                {littleHistory && <SharePrompt />}
-            </>
+            content: retryIn !== null
+                ? <div className="flex h-[300px] flex-col items-center justify-center gap-2 px-6 text-center text-sm text-zinc-700">
+                    <p className="text-base font-semibold">You're doing that too often</p>
+                    <p>You've looked up a lot of prices in the last minute. Price history will load again in {Math.max(retryIn, 0)} seconds.</p>
+                </div>
+                : <>
+                    {note && <p className="px-3 pt-1 text-xs">{note}</p>}
+                    <PriceChart series={series} loading={loading} />
+                    {littleHistory && <SharePrompt />}
+                </>
         },
         tab2: {
             title: "Alerts",

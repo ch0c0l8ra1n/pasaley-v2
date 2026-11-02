@@ -8,7 +8,7 @@ import { setShadoDomStyles, setupShadowDOM } from '@/content-scripts/chart/shado
 import '@/content-scripts/chart/index.css'
 import type { PriceHistory } from '@/lib/api'
 
-type Options = { productId: string; hostCountry: string; history: PriceHistory; delay: number }
+type Options = { productId: string; hostCountry: string; history: PriceHistory; delay: number; tooMany?: boolean }
 
 let options: Options
 let root: Root | undefined
@@ -18,6 +18,10 @@ export const realFetch = window.fetch
 window.fetch = async (input, init) => {
   if (!String(input).includes('/pricehistory')) return realFetch(input, init)
   await new Promise((resolve) => setTimeout(resolve, options.delay))
+  if (options.tooMany) {
+    const error = { code: 429, message: 'Too many requests, try again in 10 seconds', retryAfter: 10 }
+    return new Response(JSON.stringify({ success: false, error }), { status: 429, headers: { 'Content-Type': 'application/json', 'Retry-After': '10' } })
+  }
   return new Response(JSON.stringify({ data: options.history }), { headers: { 'Content-Type': 'application/json' } })
 }
 

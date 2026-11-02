@@ -13,6 +13,24 @@ export interface PriceHistory {
     skus: { skuId: string; name: string | null }[];
 }
 
+// The API asks to slow down: try again after retryAfter seconds.
+export class TooManyRequests extends Error {
+    constructor(public retryAfter: number) {
+        super(`Too many requests, try again in ${retryAfter} seconds`);
+    }
+}
+
+// This install's key id, so price history counts against the install's own
+// (higher) limit. Only content scripts can read extension storage.
+const installKeyId = async () => {
+    try {
+        const { install } = await chrome.storage.local.get("install") as { install?: { keyId?: string } };
+        return install?.keyId;
+    } catch {
+        return undefined;
+    }
+};
+
 class API{
     // Set at build time from the .env file for the build (see README).
     BASE_URL = import.meta.env.VITE_API_URL;
@@ -42,6 +60,10 @@ class API{
             throw new Error(`Failed to fetch.`);
         }
 
+        if (resp.status === 429){
+            const body = await resp.json().catch(() => null);
+            throw new TooManyRequests(Number(body?.error?.retryAfter ?? resp.headers.get("Retry-After")) || 60);
+        }
         if (!resp.ok){
             throw new Error(`HTTP error! status: ${resp.status}`);
         }
@@ -55,7 +77,8 @@ class API{
         url.searchParams.append('id', id);
         url.searchParams.append('hostCountry', hostCountry);
 
-        const resp = await this.fetchJSON(url);
+        const keyId = await installKeyId();
+        const resp = await this.fetchJSON(url, keyId ? { headers: { "X-Pasaley-Key": keyId } } : {});
         return { prices: resp?.data?.prices ?? [], skus: resp?.data?.skus ?? [] };
     }
 
