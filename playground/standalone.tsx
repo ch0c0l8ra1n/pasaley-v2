@@ -4,12 +4,13 @@ import { publishSkus, selectedSkuFromUrl } from '@/lib/skus'
 import type { PriceHistory } from '@/lib/api'
 
 const LIVE = 'Live product'
+const TOO_MANY = 'Too many requests'
 const form = document.querySelector<HTMLFormElement>('#controls')!
 const chart = document.querySelector<HTMLElement>('#module_product_price_1')!
 const variant = form.querySelector<HTMLSelectElement>('select[name=variant]')!
 const status = document.querySelector<HTMLElement>('#status')!
 
-for (const [i, name] of [LIVE, ...Object.keys(scenarios)].entries()) {
+for (const [i, name] of [LIVE, ...Object.keys(scenarios), TOO_MANY].entries()) {
   form.querySelector('#scenario')!.insertAdjacentHTML('beforeend',
     `<label><input type="radio" name="scenario" value="${name}" ${i === 0 ? 'checked' : ''} /> ${name}</label>`)
 }
@@ -46,6 +47,11 @@ async function update() {
   chart.style.width = `${data.get('width')}px`
   const delay = data.get('slow') ? 4000 : 300
   const scenario = String(data.get('scenario'))
+  if (scenario === TOO_MANY) {
+    status.textContent = 'The API answers 429 (try again in 10 seconds) to every price history request.'
+    showVariants({ prices: [], skus: [] })
+    return renderChart({ productId: '482626139', hostCountry: 'np', history: { prices: [], skus: [] }, delay, tooMany: true })
+  }
   if (scenario !== LIVE) {
     history = { prices: scenarios[scenario](545), skus: [] }
     status.textContent = 'Mock price history for Thermocot Men\'s Cotton Thermal Set (Rs. 545).'
