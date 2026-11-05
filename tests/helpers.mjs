@@ -221,7 +221,8 @@ async function expectItemsSent(page, apiCalls, source, where, responseURL) {
   assert.equal(call.method, 'POST')
   assert.equal(call.version, version())
   assert.ok(call.signed, 'products were sent without a valid signature')
-  assert.equal(call.body.href, page.url())
+  // Without the fragment: Daraz adds one (#?) to the homepage after it loads.
+  assert.equal(call.body.href.split('#')[0], page.url().split('#')[0])
   return call
 }
 
