@@ -10,7 +10,8 @@ export const API = process.env.API_URL ?? 'https://www.pasaley.com/api/v3'
 export const EXTENSION = path.resolve(process.env.EXTENSION_DIR ?? 'dist')
 export const PAGES = JSON.parse(fs.readFileSync(new URL('./pages.json', import.meta.url)))
 export const RECORDINGS = new URL('./recordings/', import.meta.url).pathname
-export const VERSION = JSON.parse(fs.readFileSync(path.join(EXTENSION, 'manifest.json'))).version
+// Read when a test needs it, so recording works before the extension is built.
+export const version = () => JSON.parse(fs.readFileSync(path.join(EXTENSION, 'manifest.json'))).version
 export const BROWSERS = (process.env.BROWSERS ?? 'chrome,firefox').split(',')
 const HEADLESS = !process.env.SHOW
 
@@ -218,7 +219,7 @@ async function expectItemsSent(page, apiCalls, source, where, responseURL) {
   const seen = listCalls(apiCalls).map((c) => `${c.body?.items?.length ?? 0} from ${c.body?.responseUrl}`)
   assert.ok(call, `no products from ${where} were sent to ${API}/ingest/products with responseUrl ${responseURL} (sent: [${seen.join(', ')}])`)
   assert.equal(call.method, 'POST')
-  assert.equal(call.version, VERSION)
+  assert.equal(call.version, version())
   assert.ok(call.signed, 'products were sent without a valid signature')
   assert.equal(call.body.href, page.url())
   return call
@@ -286,7 +287,7 @@ export async function checkProductPage({ page, apiCalls }, url) {
 
   const call = await waitFor(() => apiCalls.find((c) => c.url.pathname.endsWith('/pricehistory')))
   assert.ok(call, `no request to ${API}/pricehistory`)
-  assert.equal(call.version, VERSION)
+  assert.equal(call.version, version())
   assert.equal(call.url.searchParams.get('id'), url.match(/-i(\d+)/)[1], 'price history asked for the wrong product')
   assert.equal(call.url.searchParams.get('hostCountry'), countryOf(url), 'price history asked for the wrong country')
 

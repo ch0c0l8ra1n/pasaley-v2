@@ -82,7 +82,7 @@ Both render the real chart component (`src/content-scripts/chart/ChartApp.tsx`) 
 
 ## Testing in Chrome and Firefox
 
-These tests run on your computer, not in CI. They need Google Chrome and Firefox installed. They load the built extension (`dist/`) into each browser, open Daraz pages, and check that:
+These tests need Google Chrome and Firefox installed. They load the built extension (`dist/`) into each browser, open Daraz pages, and check that:
 
 - **Homepage:** the products embedded in the page (`window.__FIRST_SCREEN_DATA`) are sent to the API, and every product sent is one of them.
 - **Search page:** the products from Daraz's product list request (`catalog/?ajax=true`) are sent, for page 1 and again after going to page 2.
@@ -121,6 +121,15 @@ Options (environment variables):
 - `SHOW=1` to watch the browsers instead of running them headless.
 - `EXTENSION_DIR=dist-dev API_URL=https://127.0.0.1/api/v3` to test another build. Run `npm run build:dev` first. `API_URL` must match the build.
 - `CHROME_PATH` and `FIREFOX_PATH` if the browsers aren't in `/Applications`.
+
+### In GitHub Actions
+
+The "Browser tests" workflow runs them on GitHub's Ubuntu runners, with the Chrome and Firefox installed there:
+
+- **Replica**, on every pull request and push to `main`. The recordings are cached per day (and per `tests/pages.json`); the first run of a day records them, which needs Daraz to answer without a captcha. If recording fails, the job tests with the latest older recording it has.
+- **Live**, nightly (and from Actions → Browser tests → Run workflow). A captcha or a Daraz change makes it fail; a failure there says nothing about the code.
+
+Neither is a required check: a failure can come from Daraz or the runner rather than the extension, so look at the failure before trusting it. The CI workflow (lint and build) is what must pass.
 
 ## Releasing
 
