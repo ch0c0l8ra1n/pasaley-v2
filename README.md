@@ -126,10 +126,11 @@ Options (environment variables):
 
 The "Browser tests" workflow runs them on GitHub's Ubuntu runners, with the Chrome and Firefox installed there:
 
-- **Replica**, on every pull request and push to `main`. The recordings are cached per day (and per `tests/pages.json`); the first run of a day records them, which needs Daraz to answer without a captcha. If recording fails, the job tests with the latest older recording it has.
-- **Live**, nightly (and from Actions → Browser tests → Run workflow). A captcha or a Daraz change makes it fail; a failure there says nothing about the code.
+- **Record**, nightly (and from Actions → Browser tests → Run workflow): records the pages into the Actions cache, keyed by the day and `tests/pages.json`. Daraz often shows a captcha to GitHub's runners; then nothing is recorded and the cache keeps its older recordings.
+- **Replica**, on every pull request and push to `main`: the tests against the newest recordings in the cache. With none, they're skipped with a warning on the run.
+- **Live**, nightly: the tests against the real site. A captcha or a Daraz change makes it fail; a failure there says nothing about the code.
 
-Neither is a required check: a failure can come from Daraz or the runner rather than the extension, so look at the failure before trusting it. The CI workflow (lint and build) is what must pass.
+None of these is a required check: a failure can come from Daraz or the runner rather than the extension, so look at the failure before trusting it. The CI workflow (lint and build) is what must pass.
 
 ## Releasing
 
