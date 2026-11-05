@@ -203,7 +203,7 @@ export const captchaShown = (page) => page.evaluate(() =>
   !!document.querySelector('#nocaptcha, .nc_wrapper, #baxia-dialog-content, .baxia-dialog, iframe[src*="_____tmd_____"], iframe[src*="punish"]'))
 
 // True when the page-world script has replaced XMLHttpRequest.open and fetch.
-const interceptorRunning = (page) =>
+export const interceptorRunning = (page) =>
   page.evaluate(() => ![XMLHttpRequest.prototype.open, window.fetch].some((fn) => fn.toString().includes('[native code]')))
 
 // Products are sent in requests of at most this many.
