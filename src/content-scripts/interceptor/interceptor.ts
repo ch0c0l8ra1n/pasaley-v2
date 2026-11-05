@@ -56,7 +56,12 @@ document.addEventListener("click", (event: MouseEvent) => {
 });
 
 
-var findItems = (data: any | any[],parent="ROOT") : any[] => {
+// A product listing: anything with an itemId and a price. Arrays also hold nulls
+// and plain values, which aren't items.
+const isItem = (item: unknown): item is Record<string, any> =>
+    item !== null && typeof item === "object" && "itemId" in item && ("price" in item || "itemDiscountPrice" in item);
+
+const findItems = (data: any | any[],parent="ROOT") : any[] => {
     const items = [];
 
     for (const key of Object.getOwnPropertyNames(data)){
@@ -64,15 +69,11 @@ var findItems = (data: any | any[],parent="ROOT") : any[] => {
         if (!data[key]) continue;
 
         if (Array.isArray(data[key]) && data[key].length > 0){
-            const condition = (item: Object) => item.hasOwnProperty("itemId") && 
-                                        (item.hasOwnProperty("price") || item.hasOwnProperty("itemDiscountPrice"));
-            
-            
             // Check if all items in array contain keys itemId and itemPrice
-            if (data[key].some(condition)){
+            if (data[key].some(isItem)){
                 //console.log("Found some items");
-                    if (data[key].filter(condition).length > data[key].filter(item => !condition(item)).length){
-                        const valid_items = data[key].filter(condition);
+                    if (data[key].filter(isItem).length > data[key].filter((item: unknown) => !isItem(item)).length){
+                        const valid_items = data[key].filter(isItem);
                         console.log(key,"Found items: ",valid_items);
                         items.push(...valid_items);
                     }
@@ -120,34 +121,53 @@ const processItems = (items:any[]) => {
     return uniqueItems;
 }
 
-let oldXHROpen = window.XMLHttpRequest.prototype.open;
-window.XMLHttpRequest.prototype.open = function() {
-    this.addEventListener("load", async function() {
-        const responseBody = this.responseText;
+// Sends the products listed in `data`, which came from `url` (a response, or
+// the page itself).
+const reportItems = (data: unknown, url: string) => {
+    try {
+        const items = findItems(data);
+        if (items.length > 0) api.sendListItems(processItems(items), url);
+    } catch (err) {
+        console.warn("Pasaley: could not read the products in", url, err);
+    }
+};
 
-        try{
-            const url = this.responseURL;
-            // test if url contains ajax=true in it
-            if (url.includes("ajax=true")){
-                console.log(url);
-            }
+// Responses read in the last few seconds, so one seen by both the XHR and the
+// fetch hook (a fetch polyfill built on XHR) is reported once.
+const seen = new Map<string, number>();
+const reportResponse = (text: string, url: string) => {
+    let data: unknown;
+    try {
+        data = JSON.parse(text);
+    } catch {
+        return; // not JSON
+    }
+    const now = Date.now();
+    for (const [key, at] of seen) if (now - at > 5000) seen.delete(key);
+    const key = `${url}\n${text.length}`;
+    if (seen.has(key)) return;
+    seen.set(key, now);
+    reportItems(data, url);
+};
 
-            const data = JSON.parse(responseBody);
-
-            const items = findItems(data);
-
-            const processedItems = processItems(items);
-
-            if (items.length > 0)
-                api.sendListItems(processedItems, url);
-
-        }
-        catch (err){
-
-        }
-
+const oldXHROpen = window.XMLHttpRequest.prototype.open;
+window.XMLHttpRequest.prototype.open = function(this: XMLHttpRequest, ...args: unknown[]) {
+    this.addEventListener("load", function() {
+        // responseText is only readable for text responses.
+        if (this.responseType !== "" && this.responseType !== "text") return;
+        reportResponse(this.responseText, this.responseURL);
     });
-    return oldXHROpen.apply(this, arguments as any);
+    return oldXHROpen.apply(this, args as Parameters<XMLHttpRequest["open"]>);
+};
+
+const oldFetch = window.fetch;
+window.fetch = async function(this: unknown, ...args: Parameters<typeof fetch>) {
+    const response = await oldFetch.apply(this, args);
+    if (response.headers.get("content-type")?.includes("json")) {
+        // A copy, so the page still gets to read the body.
+        response.clone().text().then((text) => reportResponse(text, response.url)).catch(() => {});
+    }
+    return response;
 };
 
 function callWhenBodyIsReady(callback: () => void) {
@@ -177,18 +197,9 @@ callWhenBodyIsReady(async () => {
 
     if (!win.__FIRST_SCREEN_DATA) return;
 
-    const items = findItems(win.__FIRST_SCREEN_DATA);
-    if (items.length > 0){
-        try{
-            const processedItems = processItems(items);
-            // This data is embedded in the page itself, so the page is the response
-            // (without its #fragment, which a response URL never has).
-            api.sendListItems(processedItems, window.location.href.replace(/#.*/, ""));
-        }
-        catch (err){
-            console.error(err);
-        }
-    }
+    // This data is embedded in the page itself, so the page is the response
+    // (without its #fragment, which a response URL never has).
+    reportItems(win.__FIRST_SCREEN_DATA, window.location.href.replace(/#.*/, ""));
 });
 
 // On a product page, report every variant's price from the page's own data, and
