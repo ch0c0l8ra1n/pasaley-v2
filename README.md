@@ -88,6 +88,7 @@ These tests run on your computer, not in CI. They need Google Chrome and Firefox
 - **Search page:** the products from Daraz's product list request (`catalog/?ajax=true`) are sent, for page 1 and again after going to page 2.
 - **Product page:** the price chart is added to the price section with its header, tabs and styles. It asks the API for this product's price history (right `id` and `hostCountry`) and draws it: the price axis and the line match the prices the API returned.
 - **Every page:** the page-world script is running.
+- **Product lists (replica only):** a long product list (120 products, with the nulls and plain values Daraz puts in the same arrays) loaded from the page with `fetch` and with `XMLHttpRequest` is sent in requests of at most 50 products, every one signed, and a response fetched twice is sent once.
 
 The tests answer calls to the Pasaley API themselves, so nothing reaches the real API.
 
