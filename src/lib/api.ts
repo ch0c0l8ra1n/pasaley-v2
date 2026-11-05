@@ -91,7 +91,7 @@ class API{
     }
 
     // responseURL: the URL of the response the items were found in.
-    sendListItems(items: any[], responseURL: string){
+    sendListItems(items: Record<string, unknown>[], responseURL: string){
         const hostCountry = getHostCountry();
         for (const item of items){
             item.hostCountry = hostCountry;

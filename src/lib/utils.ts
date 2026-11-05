@@ -5,23 +5,16 @@ function cn(...inputs: ClassNameValue[]) {
     return twMerge(clsx(inputs));
 }
 
+// The last "i<digits>" in the path, without the i.
 const getProductId = () => {
-    const pattern = /i\d+/g;
-    const matches = window.location.pathname.match(pattern);
-    if (matches) {
-        const match = matches[matches.length - 1];
-        // remove the i from the match
-        return match.substring(1);
-    }
-    return "";
+    const matches = window.location.pathname.match(/i\d+/g);
+    const last = matches?.[matches.length - 1];
+    return last ? last.substring(1) : "";
 }
 
 const getHostCountry = () => {
-    const arr = window.location.hostname.split(".");
-    const country = arr[arr.length - 1];
-    if (["np", "pk", "bd", "lk"].includes(country))
-        return arr[arr.length - 1];
-    return "";
+    const country = window.location.hostname.split(".").pop() ?? "";
+    return ["np", "pk", "bd", "lk"].includes(country) ? country : "";
 }
 
 
