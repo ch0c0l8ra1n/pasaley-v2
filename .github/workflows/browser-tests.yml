@@ -1,0 +1,96 @@
+# Runs the browser tests (tests/) in Chrome and Firefox on GitHub's Ubuntu runners.
+#
+# Record (nightly, or Run workflow): records today's Daraz pages into the cache, keyed
+# by the day and tests/pages.json. Daraz often shows a captcha to GitHub's runners,
+# in which case nothing is recorded and the cache keeps its older recordings.
+#
+# Replica (every pull request and push to main, and after Record): the tests against
+# the newest recordings in the cache. With none, they're skipped with a warning.
+#
+# Live (nightly, or Run workflow): the tests against the real Daraz site, to catch
+# changes there. A captcha or a Daraz change makes it fail, which says nothing about
+# the code, so it never fails the workflow.
+#
+# None of these is a required check: CI (lint and build) is. They can fail for reasons
+# outside this repository.
+name: Browser tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '30 21 * * *' # nightly
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CHROME_PATH: /usr/bin/google-chrome
+  FIREFOX_PATH: /usr/bin/firefox
+
+jobs:
+  record:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - continue-on-error: true # Daraz may show a captcha
+        run: npm run record
+      - id: today
+        run: echo "date=$(date -u +%F)" >> "$GITHUB_OUTPUT"
+      - if: hashFiles('tests/recordings/*.json') != ''
+        uses: actions/cache/save@v4
+        with:
+          path: tests/recordings
+          key: recordings-${{ hashFiles('tests/pages.json') }}-${{ steps.today.outputs.date }}
+
+  replica:
+    needs: record
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - id: today
+        run: echo "date=$(date -u +%F)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache/restore@v4
+        with:
+          path: tests/recordings
+          key: recordings-${{ hashFiles('tests/pages.json') }}-${{ steps.today.outputs.date }}
+          restore-keys: recordings-${{ hashFiles('tests/pages.json') }}-
+      - id: recordings
+        run: |
+          if ls tests/recordings/*.json > /dev/null 2>&1; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::No Daraz recordings in the cache, so the replica tests were skipped. The nightly run records them when Daraz shows no captcha."
+          fi
+      - if: steps.recordings.outputs.found == 'true'
+        run: npm run test:replica
+
+  live:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    continue-on-error: true # Daraz may show a captcha or have changed
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run test:live
