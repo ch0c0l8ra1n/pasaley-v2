@@ -170,7 +170,7 @@ window.fetch = async function(this: unknown, ...args: Parameters<typeof fetch>) 
     return response;
 };
 
-function callWhenBodyIsReady(callback: Function) {
+function callWhenBodyIsReady(callback: () => void) {
     if (document.body) {
         callback();  // If document.body is already available
     } else {
@@ -199,7 +199,7 @@ callWhenBodyIsReady(async () => {
 
     // This data is embedded in the page itself, so the page is the response
     // (without its #fragment, which a response URL never has).
-    reportItems(win.__FIRST_SCREEN_DATA, window.location.href.split('#')[0]);
+    reportItems(win.__FIRST_SCREEN_DATA, window.location.href.replace(/#.*/, ""));
 });
 
 // On a product page, report every variant's price from the page's own data, and
@@ -215,7 +215,7 @@ callWhenBodyIsReady(async () => {
     const fields = win.__moduleData__?.data?.root?.fields;
     if (!fields) return;
 
-    const page = readProductPage(fields, window.location.href.split(/[?#]/)[0]);
+    const page = readProductPage(fields, window.location.href.replace(/[?#].*/, ""));
     if (!page) return;
     api.post("/ingest/product-page", page);
 

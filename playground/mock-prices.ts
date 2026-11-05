@@ -47,3 +47,6 @@ export const scenarios: Record<string, (current: number) => Price[]> = {
   'Stable price': stable,
   'No history': () => [],
 }
+
+// The named scenario's prices around `current`; eight months for an unknown name.
+export const mockPrices = (scenario: string | null, current: number) => (scenarios[scenario ?? ''] ?? realistic)(current)

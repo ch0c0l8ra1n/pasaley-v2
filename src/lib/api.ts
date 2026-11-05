@@ -94,7 +94,7 @@ class API{
 
     // responseURL: the URL of the response the items were found in. Long lists
     // go in several requests of at most MAX_ITEMS_PER_REQUEST items.
-    sendListItems(items: any[], responseURL: string){
+    sendListItems(items: Record<string, unknown>[], responseURL: string){
         const hostCountry = getHostCountry();
         for (const item of items){
             item.hostCountry = hostCountry;

@@ -111,10 +111,11 @@ function allPricesAt(this: Highcharts.Point) {
     const rows = this.series.chart.series
         .filter((s) => s.xAxis === this.series.xAxis) // not the navigator
         .flatMap((s) => {
-            const data = (s.options as Highcharts.SeriesLineOptions).data as number[][];
+            const data = (s.options as Highcharts.SeriesLineOptions).data as [number, number][];
             const seen = data.filter(([time]) => time <= this.x!);
+            const latest = seen[seen.length - 1];
             // Like the line itself: nothing before the first sighting or after the last.
-            return seen.length === 0 || this.x! > data[data.length - 1][0] ? [] : [`<span style="color:${s.color}">●</span> ${s.name}: <b>${Highcharts.numberFormat(seen[seen.length - 1][1], 0)}</b>`];
+            return !latest || this.x! > (data[data.length - 1]?.[0] ?? 0) ? [] : [`<span style="color:${s.color}">●</span> ${s.name}: <b>${Highcharts.numberFormat(latest[1], 0)}</b>`];
         });
     return [Highcharts.dateFormat('%b %e, %Y', this.x!), ...rows].join('<br/>');
 }
