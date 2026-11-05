@@ -143,8 +143,8 @@ async function answerApi(page, request, apiCalls) {
 function isSigned(request, url, body) {
   const h = request.headers()
   const key = installKeys.get(h['x-pasaley-key'])
-  if (!key || !h['x-pasaley-signature'] || Math.abs(Date.now() - Number(h['x-pasaley-timestamp'])) > 10 * 60 * 1000) return false
-  const message = `${h['x-pasaley-timestamp']}\n${h['x-pasaley-nonce']}\n${request.method()} ${url.pathname}\n${body}`
+  if (!key || !h['x-pasaley-signature']) return false
+  const message = `${h['x-pasaley-nonce']}\n${request.method()} ${url.pathname}\n${body}`
   return crypto.verify('sha256', Buffer.from(message), { key, dsaEncoding: 'ieee-p1363' }, Buffer.from(h['x-pasaley-signature'], 'base64url'))
 }
 
