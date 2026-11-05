@@ -202,9 +202,12 @@ export const captchaShown = (page) => page.evaluate(() =>
   location.pathname.includes('_____tmd_____') ||
   !!document.querySelector('#nocaptcha, .nc_wrapper, #baxia-dialog-content, .baxia-dialog, iframe[src*="_____tmd_____"], iframe[src*="punish"]'))
 
-// True when the page-world script has replaced XMLHttpRequest.open.
+// True when the page-world script has replaced XMLHttpRequest.open and fetch.
 const interceptorRunning = (page) =>
-  page.evaluate(() => !XMLHttpRequest.prototype.open.toString().includes('[native code]'))
+  page.evaluate(() => ![XMLHttpRequest.prototype.open, window.fetch].some((fn) => fn.toString().includes('[native code]')))
+
+// Products are sent in requests of at most this many.
+const MAX_ITEMS_PER_REQUEST = 50
 
 const listCalls = (apiCalls) => apiCalls.filter((c) => c.url.pathname.endsWith('/ingest/products'))
 
@@ -217,6 +220,7 @@ async function expectItemsSent(page, apiCalls, source, where, responseURL) {
   }))
   const seen = listCalls(apiCalls).map((c) => `${c.body?.items?.length ?? 0} from ${c.body?.responseUrl}`)
   assert.ok(call, `no products from ${where} were sent to ${API}/ingest/products with responseUrl ${responseURL} (sent: [${seen.join(', ')}])`)
+  for (const c of listCalls(apiCalls)) assert.ok(c.body.items.length <= MAX_ITEMS_PER_REQUEST, `${c.body.items.length} products in one request`)
   assert.equal(call.method, 'POST')
   assert.equal(call.version, VERSION)
   assert.ok(call.signed, 'products were sent without a valid signature')

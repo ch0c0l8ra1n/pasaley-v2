@@ -50,8 +50,12 @@ const loadInstall = async (): Promise<Install & { keyId: string }> => {
 
 let install: ReturnType<typeof loadInstall> | undefined;
 
+// When loading fails (offline, or the API is down), the next requests fail too,
+// and the install is loaded again a minute later rather than on every request.
+const RETRY_AFTER = 60 * 1000;
+
 const send = async (path: SignedPost["path"], body: object) => {
-    install ??= loadInstall().catch((err) => { install = undefined; throw err; });
+    install ??= loadInstall().catch((err) => { setTimeout(() => { install = undefined; }, RETRY_AFTER); throw err; });
     const { privateKey, keyId } = await install;
 
     const json = JSON.stringify(body);
