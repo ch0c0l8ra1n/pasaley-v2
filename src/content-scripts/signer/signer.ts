@@ -14,11 +14,6 @@ interface Install {
     keyId?: string; // set once the API has registered the key
 }
 
-interface Clock {
-    offset: number; // server time minus this computer's time, in ms
-    checkedAt: number;
-}
-
 const base64url = (bytes: ArrayBuffer) =>
     btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 
@@ -53,20 +48,7 @@ const loadInstall = async (): Promise<Install & { keyId: string }> => {
     return install as Install & { keyId: string };
 };
 
-// Signatures carry a timestamp the API checks against its own clock, and
-// computer clocks are often off, so sign with the server's time instead.
-const loadClockOffset = async () => {
-    const { clock } = await chrome.storage.local.get("clock") as { clock?: Clock };
-    if (clock && Date.now() - clock.checkedAt < 60 * 60 * 1000) return clock.offset;
-    const sentAt = Date.now();
-    const resp = await call("/config");
-    const offset = new Date(resp.data.serverTime).getTime() - (sentAt + Date.now()) / 2;
-    await chrome.storage.local.set({ clock: { offset, checkedAt: Date.now() } satisfies Clock });
-    return offset;
-};
-
 let install: ReturnType<typeof loadInstall> | undefined;
-let clockOffset: Promise<number> | undefined;
 
 // When loading fails (offline, or the API is down), the next requests fail too,
 // and the install is loaded again a minute later rather than on every request.
@@ -74,13 +56,11 @@ const RETRY_AFTER = 60 * 1000;
 
 const send = async (path: SignedPost["path"], body: object) => {
     install ??= loadInstall().catch((err) => { setTimeout(() => { install = undefined; }, RETRY_AFTER); throw err; });
-    clockOffset ??= loadClockOffset().catch(() => 0);
     const { privateKey, keyId } = await install;
 
     const json = JSON.stringify(body);
-    const timestamp = String(Math.round(Date.now() + await clockOffset));
     const nonce = crypto.randomUUID();
-    const message = `${timestamp}\n${nonce}\nPOST ${new URL(`${API}${path}`).pathname}\n${json}`;
+    const message = `${nonce}\nPOST ${new URL(`${API}${path}`).pathname}\n${json}`;
     const key = await crypto.subtle.importKey("jwk", privateKey, ECDSA, false, ["sign"]);
     const signature = await crypto.subtle.sign({ name: "ECDSA", hash: "SHA-256" }, key, new TextEncoder().encode(message));
 
@@ -89,7 +69,6 @@ const send = async (path: SignedPost["path"], body: object) => {
         body: json,
         headers: {
             "X-Pasaley-Key": keyId,
-            "X-Pasaley-Timestamp": timestamp,
             "X-Pasaley-Nonce": nonce,
             "X-Pasaley-Signature": base64url(signature),
         },
