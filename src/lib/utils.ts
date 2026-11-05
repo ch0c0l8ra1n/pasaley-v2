@@ -45,23 +45,12 @@ const isExtension = () => {
     }
 }
 
+// The price shown on the product page ("Rs. 1,499" on .np, .pk and .lk, "৳ 1,499"
+// on .bd): the first number in it, whatever the currency is written as.
 const getPrice = () => {
-    try {
-        const priceElem = document.getElementsByClassName("pdp-price")[0];
-        if (!priceElem) return NaN;
-        if (!priceElem.textContent) return NaN;
-        const price = parseInt(
-            priceElem.textContent
-                .replace("Rs.", "")
-                .replace("৳", "")
-                .replaceAll(",", "")
-                .trim()
-        );
-        return price;
-    }
-    catch (err) {
-        return NaN;
-    }
+    const text = document.getElementsByClassName("pdp-price")[0]?.textContent ?? "";
+    const number = text.replace(/,/g, "").match(/\d+(\.\d+)?/);
+    return number ? parseFloat(number[0]) : NaN;
 }
 
 const asleep = (delay: number) => {

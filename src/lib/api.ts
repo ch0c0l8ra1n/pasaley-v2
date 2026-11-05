@@ -31,6 +31,8 @@ const installKeyId = async () => {
     }
 };
 
+const MAX_ITEMS_PER_REQUEST = 50;
+
 class API{
     // Set at build time from the .env file for the build (see README).
     BASE_URL = import.meta.env.VITE_API_URL;
@@ -90,13 +92,16 @@ class API{
         window.postMessage(message, window.location.origin);
     }
 
-    // responseURL: the URL of the response the items were found in.
+    // responseURL: the URL of the response the items were found in. Long lists
+    // go in several requests of at most MAX_ITEMS_PER_REQUEST items.
     sendListItems(items: any[], responseURL: string){
         const hostCountry = getHostCountry();
         for (const item of items){
             item.hostCountry = hostCountry;
         }
-        this.post("/ingest/products", { href: window.location.href, responseUrl: responseURL, items });
+        for (let i = 0; i < items.length; i += MAX_ITEMS_PER_REQUEST) {
+            this.post("/ingest/products", { href: window.location.href, responseUrl: responseURL, items: items.slice(i, i + MAX_ITEMS_PER_REQUEST) });
+        }
     }
 
     ingestClick(click: { type: "addtocart" | "buynow"; id: string; hostCountry: string; quantity: number }){

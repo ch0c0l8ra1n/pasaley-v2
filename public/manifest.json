@@ -14,8 +14,7 @@
         "js": [
           "assets/chartApp/chartApp.js"
         ],
-        "run_at": "document_idle",
-        "all_frames": true
+        "run_at": "document_idle"
       },
       {
         "matches": [
@@ -46,19 +45,6 @@
     ],
     "permissions": [
       "storage"
-    ],
-    "web_accessible_resources": [
-      {
-        "resources": [
-          "public/interceptor.js"
-        ],
-        "matches": [
-          "https://www.daraz.com.np/*",
-          "https://www.daraz.pk/*",
-          "https://www.daraz.com.bd/*",
-          "https://www.daraz.lk/*"
-        ]
-      }
     ],
     "browser_specific_settings": {
       "gecko": {
