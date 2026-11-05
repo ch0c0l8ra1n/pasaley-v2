@@ -1,5 +1,5 @@
 import { realFetch, renderChart } from './mount'
-import { scenarios } from './mock-prices'
+import { mockPrices, scenarios } from './mock-prices'
 import { publishSkus, selectedSkuFromUrl } from '@/lib/skus'
 import type { PriceHistory } from '@/lib/api'
 
@@ -53,7 +53,7 @@ async function update() {
     return renderChart({ productId: '482626139', hostCountry: 'np', history: { prices: [], skus: [] }, delay, tooMany: true })
   }
   if (scenario !== LIVE) {
-    history = { prices: scenarios[scenario](545), skus: [] }
+    history = { prices: mockPrices(scenario, 545), skus: [] }
     status.textContent = 'Mock price history for Thermocot Men\'s Cotton Thermal Set (Rs. 545).'
     showVariants(history)
     return renderChart({ productId: '482626139', hostCountry: 'np', history, delay })
